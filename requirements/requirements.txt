@@ -1,0 +1,19 @@
+aiofiles==24.1.0
+bidict==0.23.1
+cachetools==5.5.0
+fastapi==0.115.6
+httpx==0.28.1  # required by FastAPI
+klatchat-utils~=0.0,>=0.0.1a1
+kubernetes==29.0.0
+neon-sftp~=0.1
+neon_utils[sentry]==1.11.1a5
+pydantic==2.7.0
+PyJWT==2.10.1
+pymongo==4.10.1
+python-multipart==0.0.9
+python-socketio==5.11.4
+requests==2.32.3
+starlette==0.41.3
+uvicorn==0.32.1
+websocket-client==1.8.0
+websockets==14.1
