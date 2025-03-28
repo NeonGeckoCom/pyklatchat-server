@@ -1,18 +1,12 @@
 {
   "CHAT_SERVER": {
-    "CONNECTION_PROPERTIES": {
-      "database": "Database Name",
-      "dialect": "(supported database dialect)",
-      "host": "Database host address",
-      "port": "Database Port (int)"
-    },
     "COOKIES": {
       "JWT_ALGO": "HS256",
       "LIFETIME": "Session cookie lifetime",
       "REFRESH_RATE": "Session cookie refresh rate",
       "SECRET": "any valid string phrase"
     },
-    "DATABASE_CONFIG (it is optional to include it here)": {
+    "DATABASE_CONFIG": {
       "(Database Display Name)": {
         "database": "Database Name",
         "dialect": "(supported database dialect)",

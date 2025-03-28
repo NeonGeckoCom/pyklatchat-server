@@ -32,10 +32,11 @@ from typing import Union
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from starlette.middleware.cors import CORSMiddleware
-
-from klatchat_utils.common import get_version
 from neon_utils.logger import LOG
-from chat_server.utils.middleware import SUPPORTED_MIDDLEWARE
+from klatchat_utils.constants import KLAT_ENV
+
+from chat_server.middleware import SUPPORTED_MIDDLEWARE
+from chat_server.version import __version__ as app_version
 
 
 def create_app(
@@ -47,8 +48,7 @@ def create_app(
     :param testing_mode: to run application in testing mode (defaults to False)
     :param sio_server: socket io server instance (optional)
     """
-    app_version = get_version("version.py")
-    chat_app = FastAPI(title="Klatchat Server API", version=app_version)
+    chat_app = FastAPI(title=f"Klatchat Server API ({KLAT_ENV})", version=app_version)
 
     _init_middleware(app=chat_app)
     _init_blueprints(app=chat_app)
@@ -59,17 +59,17 @@ def create_app(
     if sio_server:
         chat_app = socketio.ASGIApp(socketio_server=sio_server, other_asgi_app=chat_app)
 
-    LOG.info(f"Starting Klatchat Server v{app_version}")
+    LOG.info(f"Starting Klatchat Server v{app_version} (environment = {KLAT_ENV})")
 
     return chat_app
 
 
 def _init_blueprints(app: FastAPI):
-    blueprint_module = importlib.import_module("blueprints")
+    blueprint_module = importlib.import_module("chat_server.blueprints")
     for blueprint_module_name in dir(blueprint_module):
         if blueprint_module_name.endswith("blueprint"):
             blueprint_obj = importlib.import_module(
-                f"blueprints.{blueprint_module_name.split('_blueprint')[0]}"
+                f"chat_server.blueprints.{blueprint_module_name.split('_blueprint')[0]}"
             )
             app.include_router(blueprint_obj.router)
 
