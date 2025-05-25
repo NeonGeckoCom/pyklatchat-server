@@ -31,7 +31,8 @@ import uvicorn
 
 from chat_server.wsgi import app
 
-if __name__ == "__main__":
+
+def main():
     uvicorn.run(
         app=app,
         root_path=os.environ.get("URL_PREFIX", ""),
@@ -41,3 +42,7 @@ if __name__ == "__main__":
         ws_ping_interval=60,
         ws_ping_timeout=60,
     )
+
+
+if __name__ == "__main__":
+    main()
