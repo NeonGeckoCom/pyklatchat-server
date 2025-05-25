@@ -1,5 +1,8 @@
 FROM python:3.12-slim-bookworm
 
+LABEL vendor=neon.ai \
+    ai.neon.name="pyklatchat-server"
+
 ENV OVOS_CONFIG_BASE_FOLDER=neon
 ENV OVOS_CONFIG_FILENAME=klat.yaml
 ENV XDG_CONFIG_HOME=/config

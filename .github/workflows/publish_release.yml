@@ -8,7 +8,7 @@ on:
 
 jobs:
   tag_release:
-    runs-on: ${{inputs.runner}}
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Get Version
