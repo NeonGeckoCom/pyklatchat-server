@@ -86,7 +86,7 @@ setup(
     ],
     entry_points={
         "console_scripts": [
-            "pyklachat-server=chat_server.__main__:main",
+            "pyklatchat-server=chat_server.__main__:main",
         ]
     },
 )
