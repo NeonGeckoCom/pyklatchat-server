@@ -62,10 +62,11 @@ class KlatServerConfig(KlatConfigurationBase):
     @property
     def required_sub_keys(self) -> tuple[str]:
         return (
-            "COOKIES",
-            "FILE_STORING_TYPE",
-            "LIBRE_TRANSLATE_URL",
-            "MQ_MANAGEMENT",
+            # TODO: uncomment if are required
+            # "COOKIES",
+            # "FILE_STORING_TYPE",
+            # "LIBRE_TRANSLATE_URL",
+            # "MQ_MANAGEMENT",
             "DATABASE_CONFIG",
         )
 
