@@ -53,12 +53,14 @@ async def new_prompt(sid, data):
     cid = data["cid"]
     prompt_text = data["prompt_text"]
     created_on = int(data.get("created_on") or time())
+    context = data.get("context", {})
     try:
         formatted_data = {
             "_id": prompt_id,
             "cid": cid,
             "is_completed": "0",
             "data": {"prompt_text": prompt_text},
+            "context": context,
             "created_on": created_on,
         }
         MongoDocumentsAPI.PROMPTS.add_item(data=formatted_data)
