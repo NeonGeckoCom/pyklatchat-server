@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.0.2a4](https://github.com/NeonGeckoCom/pyklatchat-server/tree/0.0.2a4) (2025-06-07)
+
+[Full Changelog](https://github.com/NeonGeckoCom/pyklatchat-server/compare/0.0.2a3...0.0.2a4)
+
 ## [0.0.2a3](https://github.com/NeonGeckoCom/pyklatchat-server/tree/0.0.2a3) (2025-05-29)
 
 [Full Changelog](https://github.com/NeonGeckoCom/pyklatchat-server/compare/0.0.2a2...0.0.2a3)
