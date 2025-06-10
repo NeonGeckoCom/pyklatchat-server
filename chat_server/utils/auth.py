@@ -115,7 +115,7 @@ def generate_session_token(user_id) -> str:
 
 
 def create_unauthorized_user(
-    authorize: bool = True, nano_token: str = None
+    authorize: bool = True, nano_token: Optional[str] = None
 ) -> UserData:
     """
     Creates unauthorized user and sets its credentials to cookies
@@ -136,7 +136,7 @@ def create_unauthorized_user(
 def get_current_user_data(
     request: Request,
     force_tmp: bool = False,
-    nano_token: str = None,
+    nano_token: Optional[str] = None,
 ) -> UserData:
     """
     Gets current user according to response cookies
@@ -147,7 +147,7 @@ def get_current_user_data(
 
     :returns UserData based on received authorization header or sets temporal user credentials if not found
     """
-    user_data: UserData = None
+    user_data: Optional[UserData] = None
     if not force_tmp:
         if not nano_token:
             nano_token = get_header_from_request(
@@ -211,7 +211,7 @@ def refresh_token_expired(jwt_payload) -> bool:
 
 
 def get_current_user(
-    request: Request, force_tmp: bool = False, nano_token: str = None
+    request: Request, force_tmp: bool = False, nano_token: Optional[str] = None
 ) -> dict:
     """Backward compatibility method to support previous invocations"""
     return get_current_user_data(

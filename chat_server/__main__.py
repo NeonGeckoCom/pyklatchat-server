@@ -26,11 +26,12 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 import os
-
 import uvicorn
 
+from fastapi.testclient import TestClient
 from chat_server.wsgi import app
 
+assert not isinstance(app, TestClient), "App should not be a TestClient instance in production!"
 
 def main():
     uvicorn.run(

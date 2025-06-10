@@ -28,10 +28,10 @@
 
 import os
 from io import BytesIO
-
+from typing import Optional, Union, Dict, Any
 import aiofiles
 from fastapi import UploadFile, Request
-from starlette.responses import FileResponse, StreamingResponse
+from starlette.responses import FileResponse, StreamingResponse, JSONResponse
 
 from chat_server.server_config import server_config
 from chat_server.utils.enums import DataSources
@@ -50,11 +50,11 @@ class KlatAPIResponse:
 
 
 def get_file_response(
-    filename,
+    filename: str,
     location_prefix: str = "",
-    media_type: str = None,
+    media_type: Optional[str] = None,
     data_source: DataSources = DataSources.SFTP,
-) -> FileResponse:
+    ) -> Union[FileResponse, JSONResponse, StreamingResponse]:
     """
     Gets starlette file response based on provided location
 
@@ -71,17 +71,17 @@ def get_file_response(
         sftp_data = server_config.sftp_connector.get_file_object(
             get_from=f"{location_prefix}/{filename}"
         )
-        file_response_args = dict(
+        file_response_args: Dict[str, Any] = dict(
             content=sftp_data,
         )
         response_class = StreamingResponse
     elif data_source == DataSources.LOCAL:
         path = os.path.join(
-            server_config["FILE_STORING_LOCATION"], location_prefix, filename
+                str(server_config["FILE_STORING_LOCATION"]), location_prefix, filename
         )
         LOG.debug(f"path: {path}")
         if os.path.exists(os.path.expanduser(path)):
-            file_response_args = dict(path=path, filename=filename)
+            file_response_args: Dict[str, Any] = dict(path=path, filename=filename)
         else:
             LOG.error(f"{path} not found")
             return respond("File not found", 404)
@@ -98,7 +98,7 @@ async def save_file(
     file: UploadFile,
     location_prefix: str = "",
     data_source: DataSources = DataSources.SFTP,
-) -> str:
+    ) -> Union[str, JSONResponse]:
     """
     Saves file in the file system
 
@@ -108,10 +108,10 @@ async def save_file(
 
     :returns generated location for the provided file
     """
-    new_name = f'{generate_uuid(length=12)}.{file.filename.split(".")[-1]}'
+    new_name = f"{generate_uuid(length=12)}.{file.filename.split('.')[-1]}"
     if data_source == DataSources.LOCAL:
         storing_path = os.path.expanduser(
-            os.path.join(server_config["FILE_STORING_LOCATION"], location_prefix)
+            os.path.join(str(server_config["FILE_STORING_LOCATION"]), location_prefix)
         )
         os.makedirs(storing_path, exist_ok=True)
         async with aiofiles.open(
@@ -130,7 +130,7 @@ async def save_file(
             return respond("Failed to save attachment due to unexpected error", 422)
     else:
         LOG.error(f"Data source does not exists - {data_source}")
-        return respond(f"Unable to fetch relevant data source", 403)
+        return respond("Unable to fetch relevant data source", 403)
     return new_name
 
 

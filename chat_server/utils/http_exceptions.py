@@ -28,6 +28,7 @@
 
 import http
 
+from typing import Optional
 from klatchat_utils.http_utils import respond
 
 
@@ -36,7 +37,7 @@ class KlatAPIException(Exception):
     HTTP_CODE = http.HTTPStatus.INTERNAL_SERVER_ERROR
     MESSAGE = "Internal Server Error"
 
-    def __init__(self, message: str = None):
+    def __init__(self, message: Optional[str] = None):
         self.MESSAGE = message or self.MESSAGE
         super().__init__(message)
 

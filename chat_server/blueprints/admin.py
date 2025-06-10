@@ -64,6 +64,10 @@ async def refresh_service(
 
     :returns JSON-formatted response from server
     """
+    # Model defines `target_items` as optional, but it must be defined here
+    assert isinstance(model.target_items, str), (
+        f"Expected target_items to be a string, got {type(model.target_items)}"
+    )
     target_items = [x for x in model.target_items.split(",") if x]
     if model.service_name == "k8s":
         if not server_config.k8s_config:

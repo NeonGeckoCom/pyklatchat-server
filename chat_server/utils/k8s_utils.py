@@ -27,14 +27,14 @@
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import datetime
-
+from typing import Optional
 from kubernetes.client.rest import ApiException
 
 from chat_server.server_config import server_config
 from neon_utils.logger import LOG
 
 
-def restart_deployment(deployment_name: str, namespace: str = None):
+def restart_deployment(deployment_name: str, namespace: Optional[str] = None):
     """
     Restarts K8S deployment
     :param deployment_name: name of the deployment to restart

@@ -26,7 +26,7 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from typing import Type
+from typing import Type, Optional
 
 
 class CacheFactory:
@@ -35,7 +35,7 @@ class CacheFactory:
     __active_caches = {}
 
     @classmethod
-    def get(cls, name: str, cache_type: Type = None, **kwargs):
+    def get(cls, name: str, cache_type: Optional[Type] = None, **kwargs):
         """
         Get cache instance based on name and type
 

@@ -28,7 +28,7 @@
 from collections import Counter
 from dataclasses import dataclass
 from time import time
-from typing import List
+from typing import List, Optional
 
 
 from klatchat_utils.database_utils.mongo_utils import (
@@ -134,7 +134,7 @@ class PopularityCounter:
             cls.add_new_chat(cid=cid, popularity=1)
 
     @classmethod
-    def get_first_n_items(cls, search_str, exclude_items: list = None, limit: int = 10):
+    def get_first_n_items(cls, search_str, exclude_items: Optional[list] = None, limit: int = 10):
         """
         Returns first N items matching searched string
 

@@ -28,7 +28,7 @@
 
 from time import time
 
-from fastapi import APIRouter, Form, Request
+from fastapi import APIRouter, Form
 from fastapi.responses import JSONResponse
 
 from klatchat_utils.common import get_hash, generate_uuid
