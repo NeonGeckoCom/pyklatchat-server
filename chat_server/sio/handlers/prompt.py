@@ -113,7 +113,7 @@ async def get_prompt_data(sid, data):
         prompt_data = {
             "_id": _prompt_data[0]["_id"],
             "is_completed": _prompt_data[0].get("is_completed", "1"),
-            **_prompt_data[0].get("data"),
+            **_prompt_data[0].get("data", {}),
         }
     else:
         prompt_data = []

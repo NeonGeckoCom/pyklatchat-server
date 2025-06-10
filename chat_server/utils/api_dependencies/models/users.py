@@ -40,7 +40,7 @@ class CurrentUserModel(BaseModel):
     full_nickname: str | None = Field(default=None)
     is_bot: bool | None = Field(examples=[True, False], default=False)
     is_tmp: bool | None = Field(examples=[False, True], default=True)
-    roles: list[str] | None = Field(examples=["admin", ""], default=[])
+    roles: list[str] = Field(examples=["admin", ""], default=[])
 
 
 class CurrentUserSessionModel(BaseModel):

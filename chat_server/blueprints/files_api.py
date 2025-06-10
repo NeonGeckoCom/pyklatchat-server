@@ -34,7 +34,9 @@ from chat_server.utils.api_dependencies.validators.users import (
     get_authorized_user,
 )
 from chat_server.utils.http_utils import get_file_response, save_file
-from klatchat_utils.database_utils.mongo_utils.queries.wrapper import MongoDocumentsAPI
+from klatchat_utils.database_utils.mongo_utils.queries.wrapper import (
+    MongoDocumentsAPI,
+)
 from klatchat_utils.http_utils import respond
 from neon_utils.logger import LOG
 
@@ -78,7 +80,7 @@ async def get_avatar(user_id: str):
             )
         except Exception as ex:
             LOG.error(
-                f'(attempt={num_attempts}) get_file_response(filename={user_data["avatar"]}, '
+                f"(attempt={num_attempts}) get_file_response(filename={user_data['avatar']}, "
                 f'location_prefix="avatars") failed with ex - {ex}'
             )
     return respond(f"Failed to get avatar of {user_id}", 404)
@@ -102,17 +104,23 @@ async def get_message_attachment(msg_id: str, filename: str):
         ][0]
         media_type = attachment_data["mime"]
         file_response = get_file_response(
-            filename=filename, media_type=media_type, location_prefix="attachments"
+            filename=filename,
+            media_type=media_type,
+            location_prefix="attachments",
         )
         if file_response is None:
-            return JSONResponse({"msg": "Missing attachments in destination"}, 400)
+            return JSONResponse(
+                {"msg": "Missing attachments in destination"}, 400
+            )
         return file_response
     else:
         return JSONResponse({"msg": f"invalid message id: {msg_id}"}, 400)
 
 
 @router.post("/attachments")
-async def save_attachments(_=get_authorized_user, files: List[UploadFile] = File(...)):
+async def save_attachments(
+    _=get_authorized_user, files: List[UploadFile] = File(...)
+):
     """
     Stores received files in filesystem
 
@@ -123,7 +131,9 @@ async def save_attachments(_=get_authorized_user, files: List[UploadFile] = File
     response = {}
     for file in files:
         name = file.filename
-        stored_location = await save_file(location_prefix="attachments", file=file)
+        stored_location = await save_file(
+            location_prefix="attachments", file=file
+        )
         LOG.info(f"Stored location for {file.filename} - {stored_location}")
         response[name] = stored_location
     return JSONResponse(content={"location_mapping": response})

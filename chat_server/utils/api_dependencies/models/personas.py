@@ -76,7 +76,7 @@ class SetPersonaModel(PersonaModel):
 
 class DeletePersonaModel(PersonaModel):
     persona_name: str = Field(Query(), examples=["doctor"])
-    user_id: str | None = Field(Query(None), examples=["test_user_id"])
+    user_id: str | None = Field(default=Query(None), examples=["test_user_id"])
 
 
 class TogglePersonaStatusModel(PersonaModel):

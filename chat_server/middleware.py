@@ -69,7 +69,7 @@ class LogMiddleware(BaseHTTPMiddleware):
             )
             LOG.info(log_message)
             return response
-        except:
+        except:  # noqa: E722
             LOG.error(f"{path = }| traceback = {traceback.format_exc()}")
         return KlatAPIResponse.INTERNAL_SERVER_ERROR
 
