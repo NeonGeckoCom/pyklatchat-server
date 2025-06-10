@@ -27,7 +27,8 @@
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-class ConversationSkins:
+from enum import Enum
+class ConversationSkins(Enum):
     """List of supported conversation skins"""
 
     BASE = "base"

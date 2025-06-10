@@ -26,7 +26,7 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from typing import Type
+from typing import Type, Callable
 
 from fastapi import Depends
 from pydantic import BaseModel
@@ -58,7 +58,7 @@ def _validate_api_access(
     model_type: Type[BaseModel],
     min_required_role: UserRoles = UserRoles.AUTHORIZED_USER,
     request_model_type: RequestModelType = RequestModelType.QUERY,
-) -> BaseModel:
+) -> Callable:
     """
     Checks if provided to current user model and is authorized to perform actions on behalf of the target user data
     """
@@ -69,8 +69,12 @@ def _validate_api_access(
         default_value = None
 
     async def permission_dependency_checker(
-        current_user: CurrentUserData, request_model: model_type = default_value
+        current_user: CurrentUserData, request_model = default_value
     ):
+        assert isinstance(request_model, model_type), (
+            f"Expected request_model to be of type {model_type}, "
+            f"but got {type(request_model)}"
+        )
         is_authorized = _check_is_authorized(
             current_user=current_user,
             request_model=request_model,

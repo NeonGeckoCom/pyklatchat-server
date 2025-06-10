@@ -170,7 +170,7 @@ async def user_message(sid, data):
         PopularityCounter.increment_cid_popularity(new_shout_data["cid"])
     except Exception as ex:
         LOG.exception(
-            f"Socket IO failed to process user message", data=data, exc_info=ex
+            "Socket IO failed to process user message", data=data, exc_info=ex
         )
         await emit_error(
             sids=[sid],

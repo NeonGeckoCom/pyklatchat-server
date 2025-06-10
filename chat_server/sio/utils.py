@@ -103,6 +103,8 @@ def login_required(min_required_role=UserRoles.GUEST, *outer_args, **outer_kwarg
                         http_response_data.status_code
                         != http.HTTPStatus.FORBIDDEN.value
                     ):
+                        # If not bytes, the below decode will fail. Explicitly check to raise a clear exception
+                        assert isinstance(http_response_data.body, bytes), "Expected body to be bytes"
                         return await sio.emit(
                             "auth_expired",
                             data={

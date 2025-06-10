@@ -28,20 +28,8 @@
 from time import time
 
 import ovos_utils.log
-from fastapi import APIRouter, Form, Depends
+from fastapi import APIRouter, Depends, Form
 from fastapi.responses import JSONResponse
-
-from chat_server.utils.api_dependencies.models.chats import (
-    GetLiveConversationModel,
-)
-from chat_server.utils.api_dependencies.validators.users import (
-    get_authorized_user,
-    has_admin_role,
-)
-from chat_server.utils.conversation_utils import build_message_json
-from chat_server.utils.api_dependencies.extractors import CurrentUserData
-from chat_server.utils.api_dependencies.models import GetConversationModel
-from chat_server.utils.services.popularity_counter import PopularityCounter
 from klatchat_utils.common import generate_uuid
 from klatchat_utils.database_utils.mongo_utils import MongoFilter, MongoLogicalOperators
 from klatchat_utils.database_utils.mongo_utils.queries.mongo_queries import (
@@ -51,6 +39,19 @@ from klatchat_utils.database_utils.mongo_utils.queries.wrapper import MongoDocum
 from klatchat_utils.http_utils import respond
 from neon_utils.logger import LOG
 
+from chat_server.utils.api_dependencies.extractors import CurrentUserData
+from chat_server.utils.api_dependencies.models import GetConversationModel
+from chat_server.utils.api_dependencies.models.chats import (
+    GetLiveConversationModel,
+)
+from chat_server.utils.constants.conversations import ConversationSkins
+from chat_server.utils.api_dependencies.validators.users import (
+    get_authorized_user,
+    has_admin_role,
+)
+from chat_server.utils.conversation_utils import build_message_json
+from chat_server.utils.services.popularity_counter import PopularityCounter
+
 router = APIRouter(
     prefix="/chat_api",
     responses={"404": {"description": "Unknown authorization endpoint"}},
@@ -59,7 +60,7 @@ router = APIRouter(
 
 @router.post("/new")
 async def new_conversation(
-    current_user: CurrentUserData = get_authorized_user,
+    current_user: CurrentUserData = Depends(get_authorized_user),
     conversation_id: str = Form(""),  # DEPRECATED
     conversation_name: str = Form(...),
     is_private: str = Form(False),
@@ -88,7 +89,7 @@ async def new_conversation(
     if conversation_data:
         return respond(f'Conversation "{conversation_name}" already exists', 400)
 
-    is_live_conversation = True if is_live_conversation == "1" else False
+    is_live_conversation: bool = True if is_live_conversation == "1" else False
     if is_live_conversation and not has_admin_role(current_user=current_user):
         return respond("User is not authorized to create live conversations", 400)
 
@@ -139,7 +140,7 @@ async def get_matching_conversation(
 
     message_data = (
         fetch_message_data(
-            skin=model.skin,
+            skin=ConversationSkins(model.skin),
             conversation_data=conversation_data,
             limit=model.limit_chat_history,
             creation_time_filter=query_filter,
@@ -193,13 +194,13 @@ async def get_live_conversation(
             requested_user_id=current_user.user_id,
         )
         if not conversation_data:
-            return respond(f"Live conversation is missing", 404)
+            return respond("Live conversation is missing", 404)
     else:
         conversation_data = conversation_data[0]
 
     message_data = (
         fetch_message_data(
-            skin=model.skin,
+            skin=ConversationSkins(model.skin),
             conversation_data=conversation_data,
             limit=model.limit_chat_history,
         )

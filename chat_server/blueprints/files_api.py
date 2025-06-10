@@ -78,7 +78,9 @@ async def get_avatar(user_id: str):
             )
         except Exception as ex:
             LOG.error(
-                f'(attempt={num_attempts}) get_file_response(filename={user_data["avatar"]}, '
+                f"(attempt={num_attempts}) get_file_response(filename={
+                    user_data['avatar']
+                }, "
                 f'location_prefix="avatars") failed with ex - {ex}'
             )
     return respond(f"Failed to get avatar of {user_id}", 404)

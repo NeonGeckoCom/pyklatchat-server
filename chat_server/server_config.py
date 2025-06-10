@@ -25,6 +25,7 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+from typing import Optional
 from neon_sftp import NeonSFTPConnector
 from kubernetes import client, config
 
@@ -127,7 +128,7 @@ class KlatServerConfig(KlatConfigurationBase):
         return self._default_db_controller
 
     def get_db_controller(
-        self, name: str = None, override: bool = False, override_args: dict = None
+        self, name: Optional[str] = None, override: bool = False, override_args: Optional[dict] = None
     ):
         """
         Returns an new instance of Database Controller for specified dialect (creates new one if not present)
@@ -153,7 +154,7 @@ class KlatServerConfig(KlatConfigurationBase):
                 db_controller.connect()
         return db_controller
 
-    def _get_db_config_from_key(self, key: str = None):
+    def _get_db_config_from_key(self, key: Optional[str] = None):
         """Gets DB configuration by key"""
         if key is None:
             key = self.config_data.get("DATABASE_CONFIG", {})["__default_alias"]
