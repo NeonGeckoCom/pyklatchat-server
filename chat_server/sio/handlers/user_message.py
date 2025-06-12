@@ -30,6 +30,7 @@ from time import time
 from klatchat_utils.common import generate_uuid
 from klatchat_utils.database_utils.mongo_utils.queries import mongo_queries
 from klatchat_utils.database_utils.mongo_utils.queries.wrapper import MongoDocumentsAPI
+from klatchat_utils.database_utils.mongo_utils.structures import MongoFilter
 from neon_utils.logger import LOG
 from chat_server.sio.server import sio
 from chat_server.sio.utils import emit_error, login_required
@@ -67,6 +68,7 @@ async def user_message(sid, data):
     try:
         data["is_bot"] = data.pop("bot", "0")
         is_bot = data["is_bot"] == "1"
+        is_proctor = False
         if data["userID"].startswith("neon") and not is_bot:
             neon_data = MongoDocumentsAPI.USERS.get_neon_data(skill_name="neon")
             data["userID"] = neon_data["_id"]
@@ -75,6 +77,7 @@ async def user_message(sid, data):
                 user_id=data["userID"], context=data.get("context")
             )
             data["userID"] = bot_data["_id"]
+            is_proctor = bot_data["nickname"] == "proctor"
 
         cid_data = MongoDocumentsAPI.CHATS.get_chat(
             search_str=data["cid"],
@@ -106,13 +109,20 @@ async def user_message(sid, data):
             return -1
 
         is_announcement = data.get("isAnnouncement", "0") or "0"
+        data["prompt_id"] = data.pop("promptID", "")
 
-        if is_announcement != "1":
+        if is_announcement == "1":
+            if is_proctor and data["prompt_id"]:
+                discussion_counter = data.get("context", {}).get("discussion_counter")
+                if discussion_counter:
+                    MongoDocumentsAPI.PROMPTS.update_item(
+                        filters=[MongoFilter(key="_id", value=data["prompt_id"])],
+                        data={"context.discussion_counter": discussion_counter},
+                    )
+        else:
             is_announcement = "0"
 
         lang = data.setdefault("lang", "en")
-
-        data["prompt_id"] = data.pop("promptID", "")
 
         new_shout_data = {
             "_id": data["message_id"],
