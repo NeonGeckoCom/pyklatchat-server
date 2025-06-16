@@ -144,6 +144,9 @@ async def user_message(sid, data):
                 prompt_state=data["promptState"],
             )
             if is_ok:
+                prompt_data = MongoDocumentsAPI.PROMPTS.get_item(
+                    item_id=data["prompt_id"]
+                )
                 await sio.emit(
                     "new_prompt_message",
                     data={
@@ -152,6 +155,7 @@ async def user_message(sid, data):
                         "messageText": data["messageText"],
                         "promptID": data["prompt_id"],
                         "promptState": data["promptState"],
+                        "context": prompt_data.get("context", {}),
                     },
                 )
 

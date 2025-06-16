@@ -3,7 +3,7 @@ bidict==0.23.1
 cachetools==5.5.0
 fastapi==0.115.6
 httpx==0.28.1  # required by FastAPI
-klatchat-utils~=0.0,>=0.0.1a1
+klatchat-utils~=0.0,>=0.0.1a2
 kubernetes==29.0.0
 neon-sftp~=0.1
 neon_utils[sentry]==1.11.1a5
