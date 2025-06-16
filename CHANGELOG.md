@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.2a7](https://github.com/NeonGeckoCom/pyklatchat-server/tree/0.0.2a7) (2025-06-16)
+
+[Full Changelog](https://github.com/NeonGeckoCom/pyklatchat-server/compare/0.0.2a6...0.0.2a7)
+
+**Merged pull requests:**
+
+- Add support for `prompt_data` [\#5](https://github.com/NeonGeckoCom/pyklatchat-server/pull/5) ([NeonDaniel](https://github.com/NeonDaniel))
+- Update Docker GHA Automation [\#4](https://github.com/NeonGeckoCom/pyklatchat-server/pull/4) ([NeonDaniel](https://github.com/NeonDaniel))
 
 ## [0.0.2a6](https://github.com/NeonGeckoCom/pyklatchat-server/tree/0.0.2a6) (2025-06-12)
 
