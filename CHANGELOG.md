@@ -1,8 +1,41 @@
 # Changelog
 
+## [0.0.2a3](https://github.com/NeonGeckoCom/pyklatchat-server/tree/0.0.2a3) (2025-06-16)
+
+[Full Changelog](https://github.com/NeonGeckoCom/pyklatchat-server/compare/0.0.2a6...0.0.2a3)
+
+**Merged pull requests:**
+
+- Add support for `prompt_data` [\#5](https://github.com/NeonGeckoCom/pyklatchat-server/pull/5) ([NeonDaniel](https://github.com/NeonDaniel))
+
+## [0.0.2a6](https://github.com/NeonGeckoCom/pyklatchat-server/tree/0.0.2a6) (2025-06-12)
+
+[Full Changelog](https://github.com/NeonGeckoCom/pyklatchat-server/compare/0.0.2a5...0.0.2a6)
+
+## [0.0.2a5](https://github.com/NeonGeckoCom/pyklatchat-server/tree/0.0.2a5) (2025-06-07)
+
+[Full Changelog](https://github.com/NeonGeckoCom/pyklatchat-server/compare/0.0.2a4...0.0.2a5)
+
+## [0.0.2a4](https://github.com/NeonGeckoCom/pyklatchat-server/tree/0.0.2a4) (2025-06-07)
+
+[Full Changelog](https://github.com/NeonGeckoCom/pyklatchat-server/compare/0.0.2a3...0.0.2a4)
+
+## [0.0.2a3](https://github.com/NeonGeckoCom/pyklatchat-server/tree/0.0.2a3) (2025-05-29)
+
+[Full Changelog](https://github.com/NeonGeckoCom/pyklatchat-server/compare/0.0.2a2...0.0.2a3)
+
+## [0.0.2a2](https://github.com/NeonGeckoCom/pyklatchat-server/tree/0.0.2a2) (2025-05-29)
+
+[Full Changelog](https://github.com/NeonGeckoCom/pyklatchat-server/compare/0.0.2a1...0.0.2a2)
+
 ## [0.0.2a1](https://github.com/NeonGeckoCom/pyklatchat-server/tree/0.0.2a1) (2025-05-29)
 
 [Full Changelog](https://github.com/NeonGeckoCom/pyklatchat-server/compare/0.0.1...0.0.2a1)
+
+**Merged pull requests:**
+
+- Update license tests to resolve failures [\#2](https://github.com/NeonGeckoCom/pyklatchat-server/pull/2) ([NeonDaniel](https://github.com/NeonDaniel))
+- FEAT: Multi-Round discussions [\#1](https://github.com/NeonGeckoCom/pyklatchat-server/pull/1) ([NeonKirill](https://github.com/NeonKirill))
 
 
 
