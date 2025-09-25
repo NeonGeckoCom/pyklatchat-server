@@ -53,7 +53,7 @@ async def new_prompt(sid, data):
     cid = data["cid"]
     prompt_text = data["prompt_text"]
     created_on = int(data.get("created_on") or time())
-    context = data.get("context", {})
+    context = data.get("context") or {}
     try:
         formatted_data = {
             "_id": prompt_id,
