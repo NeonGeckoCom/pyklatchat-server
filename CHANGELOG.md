@@ -1,26 +1,22 @@
 # Changelog
 
+## [0.0.2a6](https://github.com/NeonGeckoCom/pyklatchat-server/tree/0.0.2a6) (2025-09-25)
+
+[Full Changelog](https://github.com/NeonGeckoCom/pyklatchat-server/compare/0.0.2a5...0.0.2a6)
+
+**Merged pull requests:**
+
+- Fix multi-round discussion [\#8](https://github.com/NeonGeckoCom/pyklatchat-server/pull/8) ([NeonDaniel](https://github.com/NeonDaniel))
+
 ## [0.0.2a5](https://github.com/NeonGeckoCom/pyklatchat-server/tree/0.0.2a5) (2025-07-09)
 
-[Full Changelog](https://github.com/NeonGeckoCom/pyklatchat-server/compare/0.0.2a7...0.0.2a5)
+[Full Changelog](https://github.com/NeonGeckoCom/pyklatchat-server/compare/0.0.2a4...0.0.2a5)
 
 **Merged pull requests:**
 
 - Fix multi-round discussion handling [\#7](https://github.com/NeonGeckoCom/pyklatchat-server/pull/7) ([NeonDaniel](https://github.com/NeonDaniel))
 - Add support for `prompt_data` [\#5](https://github.com/NeonGeckoCom/pyklatchat-server/pull/5) ([NeonDaniel](https://github.com/NeonDaniel))
 - Update Docker GHA Automation [\#4](https://github.com/NeonGeckoCom/pyklatchat-server/pull/4) ([NeonDaniel](https://github.com/NeonDaniel))
-
-## [0.0.2a7](https://github.com/NeonGeckoCom/pyklatchat-server/tree/0.0.2a7) (2025-06-16)
-
-[Full Changelog](https://github.com/NeonGeckoCom/pyklatchat-server/compare/0.0.2a6...0.0.2a7)
-
-## [0.0.2a6](https://github.com/NeonGeckoCom/pyklatchat-server/tree/0.0.2a6) (2025-06-12)
-
-[Full Changelog](https://github.com/NeonGeckoCom/pyklatchat-server/compare/0.0.2a5...0.0.2a6)
-
-## [0.0.2a5](https://github.com/NeonGeckoCom/pyklatchat-server/tree/0.0.2a5) (2025-06-07)
-
-[Full Changelog](https://github.com/NeonGeckoCom/pyklatchat-server/compare/0.0.2a4...0.0.2a5)
 
 ## [0.0.2a4](https://github.com/NeonGeckoCom/pyklatchat-server/tree/0.0.2a4) (2025-06-07)
 
