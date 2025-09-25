@@ -67,6 +67,7 @@ async def user_message(sid, data):
     LOG.info(f"Received user message data: {data}")
     try:
         data["is_bot"] = data.pop("bot", "0")
+        data["context"] = data.get("context") or {}
         is_bot = data["is_bot"] == "1"
         is_proctor = False
         if data["userID"].startswith("neon") and not is_bot:
@@ -74,7 +75,7 @@ async def user_message(sid, data):
             data["userID"] = neon_data["_id"]
         elif is_bot:
             bot_data = MongoDocumentsAPI.USERS.get_bot_data(
-                user_id=data["userID"], context=data.get("context")
+                user_id=data["userID"], context=data["context"]
             )
             data["userID"] = bot_data["_id"]
             is_proctor = bot_data["nickname"] == "proctor"
@@ -113,7 +114,7 @@ async def user_message(sid, data):
 
         if is_announcement == "1":
             if is_proctor and data["prompt_id"]:
-                discussion_counter = data.get("context", {}).get("discussion_counter")
+                discussion_counter = data["context"].get("discussion_counter")
                 if discussion_counter:
                     MongoDocumentsAPI.PROMPTS.update_item(
                         filters=[MongoFilter(key="_id", value=data["prompt_id"])],
@@ -183,9 +184,7 @@ async def user_message(sid, data):
         await sio.emit("new_message", data=data, skip_sid=[sid])
         PopularityCounter.increment_cid_popularity(new_shout_data["cid"])
     except Exception as ex:
-        LOG.exception(
-            f"Socket IO failed to process user message", data=data, exc_info=ex
-        )
+        LOG.exception(f"Socket IO failed to process user message", exc_info=ex)
         await emit_error(
             sids=[sid],
             message=f'Unable to process request "user_message" with data: {data}',
