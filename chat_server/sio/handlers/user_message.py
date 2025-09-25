@@ -67,7 +67,7 @@ async def user_message(sid, data):
     LOG.info(f"Received user message data: {data}")
     try:
         data["is_bot"] = data.pop("bot", "0")
-        data["context"] = data.get("context", {})
+        data["context"] = data.get("context") or {}
         is_bot = data["is_bot"] == "1"
         is_proctor = False
         if data["userID"].startswith("neon") and not is_bot:
