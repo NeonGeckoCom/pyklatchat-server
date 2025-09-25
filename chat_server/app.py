@@ -41,7 +41,7 @@ from chat_server.version import __version__ as app_version
 
 def create_app(
     testing_mode: bool = False, sio_server: Optional[socketio.AsyncServer] = None
-    ) -> Union[FastAPI, socketio.ASGIApp, TestClient]:
+) -> Union[FastAPI, socketio.ASGIApp, TestClient]:
     """
     Application factory for the Klatchat Server
 

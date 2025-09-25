@@ -54,7 +54,7 @@ def get_file_response(
     location_prefix: str = "",
     media_type: Optional[str] = None,
     data_source: DataSources = DataSources.SFTP,
-    ) -> Union[FileResponse, JSONResponse, StreamingResponse]:
+) -> Union[FileResponse, JSONResponse, StreamingResponse]:
     """
     Gets starlette file response based on provided location
 
@@ -77,7 +77,7 @@ def get_file_response(
         response_class = StreamingResponse
     elif data_source == DataSources.LOCAL:
         path = os.path.join(
-                str(server_config["FILE_STORING_LOCATION"]), location_prefix, filename
+            str(server_config["FILE_STORING_LOCATION"]), location_prefix, filename
         )
         LOG.debug(f"path: {path}")
         if os.path.exists(os.path.expanduser(path)):
@@ -98,7 +98,7 @@ async def save_file(
     file: UploadFile,
     location_prefix: str = "",
     data_source: DataSources = DataSources.SFTP,
-    ) -> Union[str, JSONResponse]:
+) -> Union[str, JSONResponse]:
     """
     Saves file in the file system
 

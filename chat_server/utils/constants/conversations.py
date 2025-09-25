@@ -28,6 +28,8 @@
 
 
 from enum import Enum
+
+
 class ConversationSkins(Enum):
     """List of supported conversation skins"""
 

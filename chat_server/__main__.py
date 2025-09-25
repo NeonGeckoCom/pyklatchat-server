@@ -31,7 +31,10 @@ import uvicorn
 from fastapi.testclient import TestClient
 from chat_server.wsgi import app
 
-assert not isinstance(app, TestClient), "App should not be a TestClient instance in production!"
+assert not isinstance(
+    app, TestClient
+), "App should not be a TestClient instance in production!"
+
 
 def main():
     uvicorn.run(

@@ -134,7 +134,9 @@ class PopularityCounter:
             cls.add_new_chat(cid=cid, popularity=1)
 
     @classmethod
-    def get_first_n_items(cls, search_str, exclude_items: Optional[list] = None, limit: int = 10):
+    def get_first_n_items(
+        cls, search_str, exclude_items: Optional[list] = None, limit: int = 10
+    ):
         """
         Returns first N items matching searched string
 

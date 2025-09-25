@@ -128,7 +128,10 @@ class KlatServerConfig(KlatConfigurationBase):
         return self._default_db_controller
 
     def get_db_controller(
-        self, name: Optional[str] = None, override: bool = False, override_args: Optional[dict] = None
+        self,
+        name: Optional[str] = None,
+        override: bool = False,
+        override_args: Optional[dict] = None,
     ):
         """
         Returns an new instance of Database Controller for specified dialect (creates new one if not present)

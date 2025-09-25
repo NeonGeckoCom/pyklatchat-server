@@ -69,7 +69,7 @@ def _validate_api_access(
         default_value = None
 
     async def permission_dependency_checker(
-        current_user: CurrentUserData, request_model = default_value
+        current_user: CurrentUserData, request_model=default_value
     ):
         assert isinstance(request_model, model_type), (
             f"Expected request_model to be of type {model_type}, "

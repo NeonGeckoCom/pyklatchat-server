@@ -109,18 +109,14 @@ async def get_message_attachment(msg_id: str, filename: str):
             location_prefix="attachments",
         )
         if file_response is None:
-            return JSONResponse(
-                {"msg": "Missing attachments in destination"}, 400
-            )
+            return JSONResponse({"msg": "Missing attachments in destination"}, 400)
         return file_response
     else:
         return JSONResponse({"msg": f"invalid message id: {msg_id}"}, 400)
 
 
 @router.post("/attachments")
-async def save_attachments(
-    _=get_authorized_user, files: List[UploadFile] = File(...)
-):
+async def save_attachments(_=get_authorized_user, files: List[UploadFile] = File(...)):
     """
     Stores received files in filesystem
 
@@ -131,9 +127,7 @@ async def save_attachments(
     response = {}
     for file in files:
         name = file.filename
-        stored_location = await save_file(
-            location_prefix="attachments", file=file
-        )
+        stored_location = await save_file(location_prefix="attachments", file=file)
         LOG.info(f"Stored location for {file.filename} - {stored_location}")
         response[name] = stored_location
     return JSONResponse(content={"location_mapping": response})
