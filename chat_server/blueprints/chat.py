@@ -60,7 +60,7 @@ router = APIRouter(
 
 @router.post("/new")
 async def new_conversation(
-    current_user: CurrentUserData = Depends(get_authorized_user),
+    current_user: CurrentUserData = get_authorized_user,
     conversation_id: str = Form(""),  # DEPRECATED
     conversation_name: str = Form(...),
     is_private: str = Form(False),
