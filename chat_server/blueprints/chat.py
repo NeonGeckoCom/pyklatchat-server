@@ -140,7 +140,7 @@ async def get_matching_conversation(
 
     message_data = (
         fetch_message_data(
-            skin=ConversationSkins(model.skin),
+            skin=model.skin,
             conversation_data=conversation_data,
             limit=model.limit_chat_history,
             creation_time_filter=query_filter,
@@ -200,7 +200,7 @@ async def get_live_conversation(
 
     message_data = (
         fetch_message_data(
-            skin=ConversationSkins(model.skin),
+            skin=model.skin,
             conversation_data=conversation_data,
             limit=model.limit_chat_history,
         )
