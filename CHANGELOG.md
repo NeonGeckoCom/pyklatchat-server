@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.2a7](https://github.com/NeonGeckoCom/pyklatchat-server/tree/0.0.2a7) (2025-09-26)
+
+[Full Changelog](https://github.com/NeonGeckoCom/pyklatchat-server/compare/0.0.2a6...0.0.2a7)
+
+**Merged pull requests:**
+
+- Lint, Correct Errors/Warnings, and remove Unused Code [\#3](https://github.com/NeonGeckoCom/pyklatchat-server/pull/3) ([NeonDaniel](https://github.com/NeonDaniel))
+
 ## [0.0.2a6](https://github.com/NeonGeckoCom/pyklatchat-server/tree/0.0.2a6) (2025-09-25)
 
 [Full Changelog](https://github.com/NeonGeckoCom/pyklatchat-server/compare/0.0.2a5...0.0.2a6)
