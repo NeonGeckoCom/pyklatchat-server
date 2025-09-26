@@ -54,6 +54,6 @@ def build_message_json(
     elif raw_message["message_type"] == "prompt":
         return raw_message
     else:
-        LOG.error(f"Undefined skin = {skin}")
+        LOG.error(f"Undefined skin = {skin.value}")
         message = {}
     return message

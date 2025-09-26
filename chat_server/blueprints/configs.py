@@ -30,7 +30,7 @@ from fastapi import APIRouter, Depends
 from starlette.responses import JSONResponse
 
 from chat_server.utils.api_dependencies import permitted_access
-from chat_server.utils.enums import UserRoles, RequestModelType
+from chat_server.utils.enums import UserRoles
 from chat_server.utils.http_exceptions import (
     ItemNotFoundException,
 )
@@ -57,7 +57,7 @@ async def get_config_data(model: ConfigModel = Depends()) -> JSONResponse:
 async def update_config(
     model: SetConfigModel = permitted_access(
         SetConfigModel, min_required_role=UserRoles.ADMIN
-    )
+    ),
 ) -> JSONResponse:
     """Updates provided config by name"""
     updated_data = MongoDocumentsAPI.CONFIGS.update_by_name(

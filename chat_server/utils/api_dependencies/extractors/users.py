@@ -26,7 +26,7 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 from dataclasses import asdict
-from typing import Annotated
+from typing import Annotated, Optional
 
 from fastapi import Depends
 from starlette.requests import Request
@@ -50,7 +50,7 @@ def _get_current_user_model(request: Request) -> CurrentUserModel:
 
 
 def _get_current_user_session_model(
-    request: Request, nano_token: str = None
+    request: Request, nano_token: Optional[str] = None
 ) -> CurrentUserSessionModel:
     current_user = get_current_user_data(request=request, nano_token=nano_token)
     return CurrentUserSessionModel.model_validate(asdict(current_user), strict=True)
