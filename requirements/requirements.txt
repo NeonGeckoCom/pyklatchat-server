@@ -6,8 +6,8 @@ httpx==0.28.1  # required by FastAPI
 klatchat-utils~=0.0,>=0.0.1a2
 kubernetes==29.0.0
 neon-sftp~=0.1
-neon_utils[sentry]==1.11.1a5
-pydantic==2.7.0
+neon_utils[sentry]~=1.12
+pydantic~=2.7
 PyJWT==2.10.1
 pymongo==4.10.1
 python-multipart==0.0.9
@@ -17,3 +17,4 @@ starlette==0.41.3
 uvicorn==0.32.1
 websocket-client==1.8.0
 websockets==14.1
+neon-data-models @ git+https://github.com/neongeckocom/neon-data-models@FEAT_KlatApi

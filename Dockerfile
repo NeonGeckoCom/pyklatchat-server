@@ -13,12 +13,10 @@ COPY . /app/
 WORKDIR /app
 
 RUN apt-get update \
-    && apt-get install -y \
-    && apt install build-essential -y \
-    && pip install --upgrade pip  \
-    && pip install wheel
+    && apt-get install build-essential git -y \
+    && pip install --no-cache-dir --upgrade pip wheel
 
-RUN pip install /app
+RUN pip install --no-cache-dir /app
 
 
 CMD ["pyklatchat-server"]

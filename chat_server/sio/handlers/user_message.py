@@ -25,11 +25,11 @@
 # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-from time import time
 
-from klatchat_utils.common import generate_uuid
 from klatchat_utils.database_utils.mongo_utils.queries import mongo_queries
-from klatchat_utils.database_utils.mongo_utils.queries.wrapper import MongoDocumentsAPI
+from klatchat_utils.database_utils.mongo_utils.queries.wrapper import (
+    MongoDocumentsAPI,
+)
 from klatchat_utils.database_utils.mongo_utils.structures import MongoFilter
 from neon_utils.logger import LOG
 from chat_server.sio.server import sio
@@ -38,6 +38,8 @@ from chat_server.server_config import server_config
 from chat_server.utils.enums import UserRoles
 from chat_server.utils.services.popularity_counter import PopularityCounter
 
+from neon_data_models.models.api.klat.socketio import UserMessage
+
 
 @sio.event
 async def user_message(sid, data):
@@ -45,146 +47,109 @@ async def user_message(sid, data):
     SIO event fired on new user message in chat
     :param sid: client session id
     :param data: user message data
-    Example:
-    ```
-        data = {'cid':'conversation id',
-                'userID': 'emitted user id',
-                'promptID': 'id of related prompt (optional)',
-                'source': 'declared name of the source that shouted given user message'
-                'messageText': 'content of the user message',
-                'repliedMessage': 'id of replied message (optional)',
-                'bot': 'if the message is from bot (defaults to False)',
-                'lang': 'language of the message (defaults to "en")'
-                'attachments': 'list of filenames that were send with message',
-                'context': 'message context (optional)',
-                'test': 'is test message (defaults to False)',
-                'isAudio': '1 if current message is audio message 0 otherwise',
-                'messageTTS': received tts mapping of type: {language: {gender: (audio data base64 encoded)}},
-                'isAnnouncement': if received message is the announcement,
-                'timeCreated': 'timestamp on which message was created'}
-    ```
     """
-    LOG.info(f"Received user message data: {data}")
+    LOG.debug(f"Received user message data: {data}")
     try:
-        data["is_bot"] = data.pop("bot", "0")
-        data["context"] = data.get("context") or {}
-        is_bot = data["is_bot"] == "1"
+        message = UserMessage(**data)
+        is_bot = message.is_bot == "1"
         is_proctor = False
-        if data["userID"].startswith("neon") and not is_bot:
-            neon_data = MongoDocumentsAPI.USERS.get_neon_data(skill_name="neon")
-            data["userID"] = neon_data["_id"]
+        if message.user_id.startswith("neon") and not is_bot:
+            neon_data = MongoDocumentsAPI.USERS.get_neon_data(
+                skill_name="neon"
+            )
+            message.user_id = neon_data["_id"]
         elif is_bot:
             bot_data = MongoDocumentsAPI.USERS.get_bot_data(
-                user_id=data["userID"], context=data["context"]
+                user_id=message.user_id, context=message.context
             )
-            data["userID"] = bot_data["_id"]
+            message.user_id = bot_data["_id"]
             is_proctor = bot_data["nickname"] == "proctor"
 
         cid_data = MongoDocumentsAPI.CHATS.get_chat(
-            search_str=data["cid"],
+            search_str=message.cid,
             column_identifiers=["_id"],
-            requested_user_id=data["userID"],
+            requested_user_id=message.user_id,
         )
         if not cid_data:
             msg = "Shouting to non-existent conversation, skipping further processing"
             await emit_error(sids=[sid], message=msg)
             return
 
-        data["message_id"] = generate_uuid()
-        is_audio = data.get("isAudio", "0")
-
-        if is_audio != "1":
-            is_audio = "0"
-
-        audio_path = f'{data["message_id"]}_audio.wav'
+        audio_path = f"{message.message_id}_audio.wav"
         try:
-            if is_audio == "1":
-                message_text = data["messageText"].split(",")[-1]
+            if message.is_audio == "1":
+                message_text = message.message_body.split(",")[-1]
                 server_config.sftp_connector.put_file_object(
                     file_object=message_text, save_to=f"audio/{audio_path}"
                 )
                 # for audio messages "message_text" references the name of the audio stored
-                data["messageText"] = audio_path
+                message.message_body = audio_path
         except Exception as ex:
             LOG.error(f"Failed to located file - {ex}")
             return -1
 
-        is_announcement = data.get("isAnnouncement", "0") or "0"
-        data["prompt_id"] = data.pop("promptID", "")
+        is_announcement = message.is_announcement
 
         if is_announcement == "1":
-            if is_proctor and data["prompt_id"]:
-                discussion_counter = data["context"].get("discussion_counter")
+            if is_proctor and message.prompt_id is not None:
+                discussion_counter = message.context.get("discussion_counter")
                 if discussion_counter:
                     MongoDocumentsAPI.PROMPTS.update_item(
-                        filters=[MongoFilter(key="_id", value=data["prompt_id"])],
-                        data={"context.discussion_counter": discussion_counter},
+                        filters=[
+                            MongoFilter(key="_id", value=message.prompt_id)
+                        ],
+                        data={
+                            "context.discussion_counter": discussion_counter
+                        },
                     )
         else:
             is_announcement = "0"
 
-        lang = data.setdefault("lang", "en")
-
-        new_shout_data = {
-            "_id": data["message_id"],
-            "cid": data["cid"],
-            "user_id": data["userID"],
-            "prompt_id": data["prompt_id"],
-            "message_text": data["messageText"],
-            "message_lang": lang,
-            "attachments": data.get("attachments", []),
-            "replied_message": data.get("repliedMessage", ""),
-            "is_audio": is_audio,
-            "is_announcement": is_announcement,
-            "is_bot": data["is_bot"],
-            "translations": {},
-            "created_on": int(data.get("timeCreated", time())),
-        }
+        new_shout_data = message.to_db_query()
 
         # in case message is received in some foreign language -
         # message text is kept in that language unless English translation received
-        if lang != "en":
-            new_shout_data["translations"][lang] = data["messageText"]
+        if message.lang.split("-")[0] != "en":
+            new_shout_data["translations"][message.lang] = message.message_body
 
         mongo_queries.add_shout(data=new_shout_data)
-        if is_announcement == "0" and data.get("prompt_id"):
+        if is_announcement == "0" and message.prompt_id is not None:
             is_ok = MongoDocumentsAPI.PROMPTS.add_shout_to_prompt(
-                prompt_id=data["prompt_id"],
-                user_id=data["userID"],
-                message_id=data["message_id"],
-                prompt_state=data["promptState"],
+                prompt_id=message.prompt_id,
+                user_id=message.user_id,
+                message_id=message.message_id,
+                prompt_state=message.prompt_state,
             )
             if is_ok:
                 prompt_data = MongoDocumentsAPI.PROMPTS.get_item(
-                    item_id=data["prompt_id"]
+                    item_id=message.prompt_id
                 )
+                new_prompt_data = message.to_new_prompt_message()
+                new_prompt_data.context = prompt_data.get("context", {})
                 await sio.emit(
                     "new_prompt_message",
-                    data={
-                        "cid": data["cid"],
-                        "userID": data["userID"],
-                        "messageText": data["messageText"],
-                        "promptID": data["prompt_id"],
-                        "promptState": data["promptState"],
-                        "context": prompt_data.get("context", {}),
-                    },
+                    data=new_prompt_data.model_dump(),
                 )
 
-        message_tts = data.get("messageTTS", {})
-        for language, gender_mapping in message_tts.items():
+        for language, gender_mapping in message.message_tts.items():
             for gender, audio_data in gender_mapping.items():
                 MongoDocumentsAPI.SHOUTS.save_tts_response(
-                    shout_id=data["message_id"],
+                    shout_id=message.message_id,
                     audio_data=audio_data,
                     lang=language,
                     gender=gender,
                 )
 
-        data["bound_service"] = cid_data.get("bound_service", "")
-        await sio.emit("new_message", data=data, skip_sid=[sid])
+        message.bound_service = cid_data.get("bound_service", "")
+        # keys_diff = set(data.keys()).difference(set(message.model_dump().keys()))
+        # LOG.info(f"Removed keys={keys_diff}")
+        LOG.info(f"Emitting new_message to client with keys={message.model_dump().keys()}")
+        await sio.emit(
+                "new_message", data={"sid": sid, **message.model_dump()}, skip_sid=[sid]
+        )
         PopularityCounter.increment_cid_popularity(new_shout_data["cid"])
     except Exception as ex:
-        LOG.exception(f"Socket IO failed to process user message", exc_info=ex)
+        LOG.exception("Socket IO failed to process user message", exc_info=ex)
         await emit_error(
             sids=[sid],
             message=f'Unable to process request "user_message" with data: {data}',
@@ -198,7 +163,7 @@ async def broadcast(sid, data):
     msg_type = data.pop("msg_type", None)
     msg_receivers = data.pop("to", None)
     if msg_type:
-        LOG.info(f"received broadcast message - {msg_type}")
+        LOG.debug(f"received broadcast message - {msg_type}")
         await sio.emit(
             msg_type,
             data=data,
