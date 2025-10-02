@@ -67,8 +67,9 @@ async def prompt_completed(sid, data):
     """
     prompt = CcaiPromptCompleted(**data)
 
-    LOG.info(f"setting prompt_id={prompt.prompt_id} as completed with: "
-             f"{prompt.winner}")
+    LOG.info(
+        f"setting prompt_id={prompt.prompt_id} as completed with: " f"{prompt.winner}"
+    )
     MongoDocumentsAPI.PROMPTS.set_completed(**prompt.to_db_query())
 
     keys_diff = set(data.keys()).difference(set(prompt.model_dump().keys()))
@@ -86,9 +87,7 @@ async def get_prompt_data(sid, data):
     try:
         requested_prompt_data = GetPromptData(**data)
         _prompt_data = PromptData(
-            **mongo_queries.fetch_prompt_data(
-                **requested_prompt_data.to_db_query()
-            )
+            **mongo_queries.fetch_prompt_data(**requested_prompt_data.to_db_query())
         )
         if requested_prompt_data.prompt_id:
             # TODO: Confirm this works; unclear what was in `data`

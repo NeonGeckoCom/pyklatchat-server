@@ -49,7 +49,9 @@ async def stt_response(sid, data):
             # message_text = response.transcript
             # lang = LanguageSettings.to_system_lang(response.lang)
             MongoDocumentsAPI.SHOUTS.save_stt_response(
-                shout_id=response.message_id, message_text=response.transcript, lang=response.lang
+                shout_id=response.message_id,
+                message_text=response.transcript,
+                lang=response.lang,
             )
             response_data = {
                 "cid": response.cid,

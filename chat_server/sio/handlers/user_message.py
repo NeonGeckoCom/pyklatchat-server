@@ -54,9 +54,7 @@ async def user_message(sid, data):
         is_bot = message.is_bot == "1"
         is_proctor = False
         if message.user_id.startswith("neon") and not is_bot:
-            neon_data = MongoDocumentsAPI.USERS.get_neon_data(
-                skill_name="neon"
-            )
+            neon_data = MongoDocumentsAPI.USERS.get_neon_data(skill_name="neon")
             message.user_id = neon_data["_id"]
         elif is_bot:
             bot_data = MongoDocumentsAPI.USERS.get_bot_data(
@@ -95,12 +93,8 @@ async def user_message(sid, data):
                 discussion_counter = message.context.get("discussion_counter")
                 if discussion_counter:
                     MongoDocumentsAPI.PROMPTS.update_item(
-                        filters=[
-                            MongoFilter(key="_id", value=message.prompt_id)
-                        ],
-                        data={
-                            "context.discussion_counter": discussion_counter
-                        },
+                        filters=[MongoFilter(key="_id", value=message.prompt_id)],
+                        data={"context.discussion_counter": discussion_counter},
                     )
         else:
             is_announcement = "0"
@@ -143,9 +137,11 @@ async def user_message(sid, data):
         message.bound_service = cid_data.get("bound_service", "")
         # keys_diff = set(data.keys()).difference(set(message.model_dump().keys()))
         # LOG.info(f"Removed keys={keys_diff}")
-        LOG.info(f"Emitting new_message to client with keys={message.model_dump().keys()}")
+        LOG.info(
+            f"Emitting new_message to client with keys={message.model_dump().keys()}"
+        )
         await sio.emit(
-                "new_message", data={"sid": sid, **message.model_dump()}, skip_sid=[sid]
+            "new_message", data={"sid": sid, **message.model_dump()}, skip_sid=[sid]
         )
         PopularityCounter.increment_cid_popularity(new_shout_data["cid"])
     except Exception as ex:

@@ -53,9 +53,7 @@ async def request_tts(sid, data):
     """
     try:
         request = GetTtsRequest(sid=sid, **data)
-        matching_message = MongoDocumentsAPI.SHOUTS.get_item(
-            item_id=request.message_id
-        )
+        matching_message = MongoDocumentsAPI.SHOUTS.get_item(item_id=request.message_id)
         if not matching_message:
             LOG.error("Failed to request TTS - matching message not found")
         else:
@@ -90,9 +88,7 @@ async def request_tts(sid, data):
                 try:
                     file_location = f"audio/{audio_file}"
                     LOG.info(f"Fetching existing file from: {file_location}")
-                    fo = server_config.sftp_connector.get_file_object(
-                        file_location
-                    )
+                    fo = server_config.sftp_connector.get_file_object(file_location)
                     if fo.getbuffer().nbytes > 0:
                         LOG.info(
                             f"File detected for cid={request.cid}, message_id={request.message_id}, lang={request.lang}"
@@ -105,9 +101,7 @@ async def request_tts(sid, data):
                             "gender": preferred_gender,
                             "audio_data": audio_data,
                         }
-                        await sio.emit(
-                            "incoming_tts", data=response_data, to=sid
-                        )
+                        await sio.emit("incoming_tts", data=response_data, to=sid)
                     else:
                         LOG.error(
                             f"Empty file detected for cid={request.cid}, message_id={request.message_id}, lang={request.lang}"
@@ -122,9 +116,7 @@ async def request_tts(sid, data):
 async def tts_response(sid, data):
     """Handle TTS Response from Observer"""
     response = GetTtsResponse(sid=sid, **data)
-    matching_shout = MongoDocumentsAPI.SHOUTS.get_item(
-        item_id=response.message_id
-    )
+    matching_shout = MongoDocumentsAPI.SHOUTS.get_item(item_id=response.message_id)
     if not matching_shout:
         LOG.warning(
             f"Skipping TTS Response for message_id={response.message_id} - matching shout does not exist"
