@@ -27,6 +27,7 @@
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from klatchat_utils.database_utils.mongo_utils.queries import mongo_queries
+from klatchat_utils.database_utils.mongo_utils.queries.dao.prompts import PromptStates
 from klatchat_utils.database_utils.mongo_utils.queries.wrapper import (
     MongoDocumentsAPI,
 )
@@ -108,6 +109,9 @@ async def user_message(sid, data):
 
         mongo_queries.add_shout(data=new_shout_data)
         if is_announcement == "0" and message.prompt_id is not None:
+            if not isinstance(message.prompt_state, PromptStates):
+                LOG.error(f"Invalid prompt state: {message.prompt_state}")
+                message.prompt_state = PromptStates(message.prompt_state)
             is_ok = MongoDocumentsAPI.PROMPTS.add_shout_to_prompt(
                 prompt_id=message.prompt_id,
                 user_id=message.user_id,
@@ -138,10 +142,10 @@ async def user_message(sid, data):
         # keys_diff = set(data.keys()).difference(set(message.model_dump().keys()))
         # LOG.info(f"Removed keys={keys_diff}")
         LOG.info(
-            f"Emitting new_message to client with keys={message.model_dump().keys()}"
+                f"Emitting new_message to client: {message.model_dump()}"
         )
         await sio.emit(
-            "new_message", data={"sid": sid, **message.model_dump()}, skip_sid=[sid]
+            "new_message", data=message.model_dump(), skip_sid=[sid]
         )
         PopularityCounter.increment_cid_popularity(new_shout_data["cid"])
     except Exception as ex:

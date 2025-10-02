@@ -48,6 +48,7 @@ async def new_prompt(sid, data):
     :param data: user message data
     """
     prompt = NewCcaiPrompt(**data)
+    LOG.info(f"Creating new prompt: {prompt.prompt_text}")
     try:
         formatted_data = prompt.to_db_query()
         MongoDocumentsAPI.PROMPTS.add_item(data=formatted_data)
