@@ -38,7 +38,7 @@ from chat_server.sio.utils import emit_error, login_required
 from chat_server.server_config import server_config
 from chat_server.utils.enums import UserRoles
 from chat_server.utils.services.popularity_counter import PopularityCounter
-
+from pydantic import ValidationError
 from neon_data_models.models.api.klat.socketio import UserMessage
 
 
@@ -50,24 +50,45 @@ async def user_message(sid, data):
     :param data: user message data
     """
     LOG.debug(f"Received user message data: {data}")
+    # TODO: Identify purpose of sid and data['sid'] (they do not appear to ever match)
     try:
-        message = UserMessage(**data)
+        try:
+            data.setdefault("sid", "")  # TODO: This is patching something...
+            message = UserMessage(**data)
+        except ValidationError as e:
+            LOG.error(
+                e
+            )  # TODO: This should be an error after the primary sources of errors are fixed
+            data.pop("user_id", None)  # remove user_id if present
+            data.pop("userID", None)  # remove userID if present
+            message = UserMessage(**data)  # try again
         is_bot = message.is_bot == "1"
-        is_proctor = False
-        if message.user_id.startswith("neon") and not is_bot:
+        is_proctor = message.username.startswith("proctor")
+        LOG.info(f"{message.username} is_proctor={is_proctor}|is_bot={is_bot}")
+        if message.username.startswith("neon") and not is_bot:
             neon_data = MongoDocumentsAPI.USERS.get_neon_data(skill_name="neon")
-            message.user_id = neon_data["_id"]
+            message.user_uid = neon_data["_id"]
+            LOG.debug(f"Setting user_uid to {message.user_id}")
         elif is_bot:
-            bot_data = MongoDocumentsAPI.USERS.get_bot_data(
-                user_id=message.user_id, context=message.context
+            LOG.info(
+                f"Getting bot data for user_id={message.user_id}|nick={message.username}"
             )
-            message.user_id = bot_data["_id"]
-            is_proctor = bot_data["nickname"] == "proctor"
+            bot_data = MongoDocumentsAPI.USERS.get_bot_data(
+                user_id=message.username, context=message.context
+            )
+            message.user_uid = bot_data["_id"]
+            LOG.info(f"Setting user_uid to {message.user_uid} for {message.username}")
+        else:
+            user_data = MongoDocumentsAPI.USERS.get_user(user_id=message.user_id)
+            LOG.info(f"Got user_data: {user_data}")
+            message.user_uid = message.user_id
+            message.user_id = f"{message.user_id}-{sid}"
+            message.username = user_data["nickname"]
 
         cid_data = MongoDocumentsAPI.CHATS.get_chat(
             search_str=message.cid,
             column_identifiers=["_id"],
-            requested_user_id=message.user_id,
+            requested_user_id=message.user_uid,
         )
         if not cid_data:
             msg = "Shouting to non-existent conversation, skipping further processing"
@@ -89,7 +110,7 @@ async def user_message(sid, data):
 
         is_announcement = message.is_announcement
 
-        if is_announcement == "1":
+        if is_announcement:
             if is_proctor and message.prompt_id is not None:
                 discussion_counter = message.context.get("discussion_counter")
                 if discussion_counter:
@@ -97,9 +118,6 @@ async def user_message(sid, data):
                         filters=[MongoFilter(key="_id", value=message.prompt_id)],
                         data={"context.discussion_counter": discussion_counter},
                     )
-        else:
-            is_announcement = "0"
-
         new_shout_data = message.to_db_query()
 
         # in case message is received in some foreign language -
@@ -108,10 +126,7 @@ async def user_message(sid, data):
             new_shout_data["translations"][message.lang] = message.message_body
 
         mongo_queries.add_shout(data=new_shout_data)
-        if is_announcement == "0" and message.prompt_id is not None:
-            if not isinstance(message.prompt_state, PromptStates):
-                LOG.error(f"Invalid prompt state: {message.prompt_state}")
-                message.prompt_state = PromptStates(message.prompt_state)
+        if not message.is_announcement and message.prompt_id is not None:
             is_ok = MongoDocumentsAPI.PROMPTS.add_shout_to_prompt(
                 prompt_id=message.prompt_id,
                 user_id=message.user_id,
@@ -124,9 +139,11 @@ async def user_message(sid, data):
                 )
                 new_prompt_data = message.to_new_prompt_message()
                 new_prompt_data.context = prompt_data.get("context", {})
+                LOG.info(f"Emitting new_prompt_message: {new_prompt_data.model_dump()}")
+                # TODO: Consider backwards-compat. patching of `user_id` handling
                 await sio.emit(
                     "new_prompt_message",
-                    data=new_prompt_data.model_dump(),
+                    data={**new_prompt_data.model_dump(), "userID": message.user_uid},
                 )
 
         for language, gender_mapping in message.message_tts.items():
@@ -141,11 +158,11 @@ async def user_message(sid, data):
         message.bound_service = cid_data.get("bound_service", "")
         # keys_diff = set(data.keys()).difference(set(message.model_dump().keys()))
         # LOG.info(f"Removed keys={keys_diff}")
-        LOG.info(
-                f"Emitting new_message to client: {message.model_dump()}"
-        )
+        # TODO: Consider backwards-compat. patching of `user_id` handling
         await sio.emit(
-            "new_message", data=message.model_dump(), skip_sid=[sid]
+            "new_message",
+            data={**message.model_dump(), "userID": message.user_uid},
+            skip_sid=[sid],
         )
         PopularityCounter.increment_cid_popularity(new_shout_data["cid"])
     except Exception as ex:
