@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.2a8](https://github.com/NeonGeckoCom/pyklatchat-server/tree/0.0.2a8) (2025-10-07)
+
+[Full Changelog](https://github.com/NeonGeckoCom/pyklatchat-server/compare/0.0.2a7...0.0.2a8)
+
+**Merged pull requests:**
+
+- Resolve errors around personas endpoint [\#10](https://github.com/NeonGeckoCom/pyklatchat-server/pull/10) ([NeonDaniel](https://github.com/NeonDaniel))
+
 ## [0.0.2a7](https://github.com/NeonGeckoCom/pyklatchat-server/tree/0.0.2a7) (2025-09-26)
 
 [Full Changelog](https://github.com/NeonGeckoCom/pyklatchat-server/compare/0.0.2a6...0.0.2a7)
