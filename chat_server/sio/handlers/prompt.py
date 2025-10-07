@@ -26,11 +26,17 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from time import time
-
 from klatchat_utils.database_utils.mongo_utils.queries import mongo_queries
-from klatchat_utils.database_utils.mongo_utils.queries.wrapper import MongoDocumentsAPI
+from klatchat_utils.database_utils.mongo_utils.queries.wrapper import (
+    MongoDocumentsAPI,
+)
 from neon_utils.logger import LOG
+from neon_data_models.models.api.klat.socketio import (
+    NewCcaiPrompt,
+    CcaiPromptCompleted,
+    GetPromptData,
+    PromptData,
+)
 from chat_server.sio.server import sio
 
 
@@ -40,33 +46,17 @@ async def new_prompt(sid, data):
     SIO event fired on new prompt data saving request
     :param sid: client session id
     :param data: user message data
-    Example:
-    ```
-        data = {'cid':'conversation id',
-                'promptID': 'id of related prompt',
-                'context': 'message context (optional)',
-                'timeCreated': 'timestamp on which message was created'
-                }
-    ```
     """
-    prompt_id = data["prompt_id"]
-    cid = data["cid"]
-    prompt_text = data["prompt_text"]
-    created_on = int(data.get("created_on") or time())
-    context = data.get("context") or {}
+    prompt = NewCcaiPrompt(**data)
+    LOG.debug(f"Creating new prompt: {prompt.prompt_text}")
     try:
-        formatted_data = {
-            "_id": prompt_id,
-            "cid": cid,
-            "is_completed": "0",
-            "data": {"prompt_text": prompt_text},
-            "context": context,
-            "created_on": created_on,
-        }
+        formatted_data = prompt.to_db_query()
         MongoDocumentsAPI.PROMPTS.add_item(data=formatted_data)
         await sio.emit("new_prompt_created", data=formatted_data)
     except Exception as ex:
-        LOG.error(f'Prompt "{prompt_id}" was not created due to exception - {ex}')
+        LOG.error(
+            f'Prompt "{prompt.prompt_id}" was not created due to exception - {ex}'
+        )
 
 
 @sio.event
@@ -76,17 +66,13 @@ async def prompt_completed(sid, data):
     :param sid: client session id
     :param data: user message data
     """
-    prompt_id = data["context"]["prompt"]["prompt_id"]
-
-    LOG.info(f"setting {prompt_id = } as completed")
-    MongoDocumentsAPI.PROMPTS.set_completed(
-        prompt_id=prompt_id, prompt_context=data["context"]
+    prompt = CcaiPromptCompleted(**data)
+    LOG.info(
+        f"setting prompt_id={prompt.prompt_id} as completed with: " f"{prompt.winner}"
     )
-    formatted_data = {
-        "winner": data["context"].get("winner", ""),
-        "prompt_id": prompt_id,
-    }
-    await sio.emit("set_prompt_completed", data=formatted_data)
+    MongoDocumentsAPI.PROMPTS.set_completed(**prompt.to_db_query())
+
+    await sio.emit("set_prompt_completed", data=prompt.model_dump())
 
 
 @sio.event
@@ -95,41 +81,29 @@ async def get_prompt_data(sid, data):
     SIO event fired getting prompt data request
     :param sid: client session id
     :param data: user message data
-    Example:
-    ```
-        data = {'userID': 'emitted user id',
-                'cid':'conversation id',
-                'promptID': 'id of related prompt'}
-    ```
     """
-    prompt_id = data.get("prompt_id")
-    _prompt_data = mongo_queries.fetch_prompt_data(
-        cid=data["cid"],
-        limit=data.get("limit", 5),
-        prompt_ids=[prompt_id],
-        fetch_user_data=True,
-    )
-    if prompt_id:
-        prompt_data = {
-            "_id": _prompt_data[0]["_id"],
-            "is_completed": _prompt_data[0].get("is_completed", "1"),
-            **_prompt_data[0].get("data", {}),
-        }
-    else:
-        prompt_data = []
-        for item in _prompt_data:
-            prompt_data.append(
-                {
-                    "_id": item["_id"],
-                    "created_on": item["created_on"],
-                    "is_completed": item.get("is_completed", "1"),
-                    **item["data"],
-                }
-            )
-    result = dict(
-        data=prompt_data,
-        receiver=data["nick"],
-        cid=data["cid"],
-        request_id=data["request_id"],
-    )
-    await sio.emit("prompt_data", data=result)
+    try:
+        requested_prompt_data = GetPromptData(**data)
+        _prompt_data = PromptData(
+            **mongo_queries.fetch_prompt_data(**requested_prompt_data.to_db_query())
+        )
+        if requested_prompt_data.prompt_id:
+            if isinstance(_prompt_data.data, list):
+                prompt_data = _prompt_data.data[0].model_dump()
+            else:
+                prompt_data = _prompt_data.data.model_dump()
+        else:
+            prompt_data = []
+            if isinstance(_prompt_data.data, list):
+                for item in _prompt_data:
+                    prompt_data.append(item.model_dump())
+        result = dict(
+            data=prompt_data,
+            receiver=requested_prompt_data.nick,
+            cid=requested_prompt_data.cid,
+            request_id=requested_prompt_data.request_id,
+        )
+        LOG.info(f"Emitting prompt_data: {result}")
+        await sio.emit("prompt_data", data=result)
+    except Exception as ex:
+        LOG.error(f"Failed to get prompt data due to exception - {ex}")

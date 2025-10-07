@@ -35,6 +35,10 @@ from neon_utils.logger import LOG
 from chat_server.sio.server import sio
 from chat_server.utils.cache_utils import CacheFactory
 
+# TODO: The backend service supporting these endpoints is no longer functional.
+# These need to be updated to implement appropriate data models once the
+# backend service is re-implemented.
+
 
 @sio.event
 async def request_translate(sid, data):

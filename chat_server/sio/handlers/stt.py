@@ -28,35 +28,34 @@
 
 from klatchat_utils.database_utils.mongo_utils.queries.wrapper import MongoDocumentsAPI
 from neon_utils.logger import LOG
+from pydantic import ValidationError
 from chat_server.sio.server import sio
 from chat_server.sio.utils import emit_error
-from chat_server.utils.languages import LanguageSettings
+
+from neon_data_models.models.api.klat.socketio import GetSttResponse, GetSttRequest
 
 
 @sio.event
 async def stt_response(sid, data):
     """Handle STT Response from Observer"""
-    mq_context = data.get("context", {})
-    message_id = mq_context.get("message_id")
-    matching_shout = MongoDocumentsAPI.SHOUTS.get_item(item_id=message_id)
+    response = GetSttResponse(**data)
+    matching_shout = MongoDocumentsAPI.SHOUTS.get_item(item_id=response.sid)
     if not matching_shout:
         LOG.warning(
-            f"Skipping STT Response for message_id={message_id} - matching shout does not exist"
+            f"Skipping STT Response for sid={response.sid} - matching shout does not exist"
         )
     else:
         try:
-            message_text = data.get("transcript")
-            lang = LanguageSettings.to_system_lang(data["lang"])
             MongoDocumentsAPI.SHOUTS.save_stt_response(
-                shout_id=message_id, message_text=message_text, lang=lang
+                shout_id=response.sid,
+                message_text=response.transcript,
+                lang=response.lang,
             )
-            sid = mq_context.get("sid")
-            cid = mq_context.get("cid")
             response_data = {
-                "cid": cid,
-                "message_id": message_id,
-                "lang": lang,
-                "message_text": message_text,
+                "cid": response.cid,
+                "message_id": response.sid,
+                "lang": response.lang,
+                "message_text": response.transcript,
             }
             await sio.emit("incoming_stt", data=response_data, to=sid)
         except Exception as ex:
@@ -70,32 +69,18 @@ async def request_stt(sid, data):
 
     :param sid: client session id
     :param data: received tts request data
-    Example of tts request data:
-    ```
-        data = {
-                    'cid': (target conversation id)
-                    'message_id': (target message id),
-                    'audio_data':(target audio data base64 encoded),
-                    (optional) 'lang': (target message lang)
-               }
-    ```
     """
-    required_keys = ("message_id",)
-    if not all(key in list(data) for key in required_keys):
-        LOG.error(f"Missing one of the required keys - {required_keys}")
-    else:
-        cid = data.get("cid", "")
-        message_id = data.get("message_id", "")
-        # TODO: process received language
-        lang = "en"
-        # lang = data.get('lang', 'en')
-        if shout_data := MongoDocumentsAPI.SHOUTS.get_item(item_id=message_id):
-            message_transcript = shout_data.get("transcripts", {}).get(lang)
+    try:
+        request = GetSttRequest(sid=sid, **data)
+        # TODO: Identify reason for this language patch
+        request.lang = "en"
+        if shout_data := MongoDocumentsAPI.SHOUTS.get_item(item_id=request.sid):
+            message_transcript = shout_data.get("transcripts", {}).get(request.lang)
             if message_transcript:
                 response_data = {
-                    "cid": cid,
-                    "message_id": message_id,
-                    "lang": lang,
+                    "cid": request.cid,
+                    "message_id": request.sid,
+                    "lang": request.lang,
                     "message_text": message_transcript,
                 }
                 return await sio.emit("incoming_stt", data=response_data, to=sid)
@@ -105,16 +90,10 @@ async def request_stt(sid, data):
                 return await emit_error(message=err_msg, sids=[sid])
         audio_data = data.get(
             "audio_data"
-        ) or MongoDocumentsAPI.SHOUTS.fetch_audio_data(message_id=message_id)
+        ) or MongoDocumentsAPI.SHOUTS.fetch_audio_data(sid=request.sid)
         if not audio_data:
             LOG.error("Failed to fetch audio data")
         else:
-            lang = LanguageSettings.to_neon_lang(lang)
-            formatted_data = {
-                "cid": cid,
-                "sid": sid,
-                "message_id": message_id,
-                "audio_data": audio_data,
-                "lang": lang,
-            }
-            await sio.emit("get_stt", data=formatted_data)
+            await sio.emit("get_stt", data=request.model_dump())
+    except ValidationError:
+        LOG.exception(f"Invalid STT request data - {data}")

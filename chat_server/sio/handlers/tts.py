@@ -27,12 +27,19 @@
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from klatchat_utils.common import buffer_to_base64
-from klatchat_utils.database_utils.mongo_utils.queries.wrapper import MongoDocumentsAPI
+from klatchat_utils.database_utils.mongo_utils.queries.wrapper import (
+    MongoDocumentsAPI,
+)
 from neon_utils.logger import LOG
+from pydantic import ValidationError
 from chat_server.sio.server import sio
 from chat_server.sio.utils import emit_error
 from chat_server.server_config import server_config
-from chat_server.utils.languages import LanguageSettings
+
+from neon_data_models.models.api.klat.socketio import (
+    GetTtsRequest,
+    GetTtsResponse,
+)
 
 
 @sio.event
@@ -42,26 +49,10 @@ async def request_tts(sid, data):
 
     :param sid: client session id
     :param data: received tts request data
-    Example of tts request data:
-    ```
-        data = {
-                    'message_id': (target message id),
-                    'message_text':(target message text),
-                    'lang': (target message lang)
-               }
-    ```
     """
-    required_keys = (
-        "cid",
-        "message_id",
-    )
-    if not all(key in list(data) for key in required_keys):
-        LOG.error(f"Missing one of the required keys - {required_keys}")
-    else:
-        lang = data.get("lang", "en")
-        message_id = data["message_id"]
-        cid = data["cid"]
-        matching_message = MongoDocumentsAPI.SHOUTS.get_item(item_id=message_id)
+    try:
+        request = GetTtsRequest(**data)
+        matching_message = MongoDocumentsAPI.SHOUTS.get_item(item_id=request.sid)
         if not matching_message:
             LOG.error("Failed to request TTS - matching message not found")
         else:
@@ -75,19 +66,21 @@ async def request_tts(sid, data):
             # )
             preferred_gender = "female"
             audio_file = (
-                matching_message.get("audio", {}).get(lang, {}).get(preferred_gender)
+                matching_message.get("audio", {})
+                .get(request.lang, {})
+                .get(preferred_gender)
             )
             if not audio_file:
                 LOG.info(
-                    f"File was not detected for cid={cid}, message_id={message_id}, lang={lang}"
+                    f"File was not detected for cid={request.cid}, sid={request.sid}, lang={request.lang}"
                 )
                 message_text = matching_message.get("message_text")
                 formatted_data = {
-                    "cid": cid,
-                    "sid": sid,
-                    "message_id": message_id,
+                    "cid": request.cid,
+                    "sid": request.sid,
+                    "message_id": request.sid,
                     "text": message_text,
-                    "lang": LanguageSettings.to_neon_lang(lang),
+                    "lang": request.lang,
                 }
                 await sio.emit("get_tts", data=formatted_data)
             else:
@@ -97,59 +90,55 @@ async def request_tts(sid, data):
                     fo = server_config.sftp_connector.get_file_object(file_location)
                     if fo.getbuffer().nbytes > 0:
                         LOG.info(
-                            f"File detected for cid={cid}, message_id={message_id}, lang={lang}"
+                            f"File detected for cid={request.cid}, sid={request.sid}, lang={request.lang}"
                         )
                         audio_data = buffer_to_base64(fo)
                         response_data = {
-                            "cid": cid,
-                            "message_id": message_id,
-                            "lang": lang,
+                            "cid": request.cid,
+                            "message_id": request.sid,
+                            "lang": request.lang,
                             "gender": preferred_gender,
                             "audio_data": audio_data,
                         }
                         await sio.emit("incoming_tts", data=response_data, to=sid)
                     else:
                         LOG.error(
-                            f"Empty file detected for cid={cid}, message_id={message_id}, lang={lang}"
+                            f"Empty file detected for cid={request.cid}, sid={request.sid}, lang={request.lang}"
                         )
                 except Exception as ex:
                     LOG.error(f"Failed to send TTS response - {ex}")
+    except ValidationError:
+        LOG.exception(f"Invalid TTS request data - {data}")
 
 
 @sio.event
 async def tts_response(sid, data):
     """Handle TTS Response from Observer"""
-    mq_context = data.get("context", {})
-    cid = mq_context.get("cid")
-    message_id = mq_context.get("message_id")
-    sid = mq_context.get("sid")
-    lang = LanguageSettings.to_system_lang(data.get("lang", "en-us"))
-    lang_gender = data.get("gender", "undefined")
-    matching_shout = MongoDocumentsAPI.SHOUTS.get_item(item_id=message_id)
+    response = GetTtsResponse(sid=sid, **data)
+    matching_shout = MongoDocumentsAPI.SHOUTS.get_item(item_id=response.sid)
     if not matching_shout:
         LOG.warning(
-            f"Skipping TTS Response for message_id={message_id} - matching shout does not exist"
+            f"Skipping TTS Response for sid={response.sid} - matching shout does not exist"
         )
     else:
-        audio_data = data.get("audio_data")
-        if not audio_data:
+        if not response.audio_data:
             LOG.warning(
-                f"Skipping TTS Response for message_id={message_id} - audio data is empty"
+                f"Skipping TTS Response for sid={response.sid} - audio data is empty"
             )
         else:
             is_ok = MongoDocumentsAPI.SHOUTS.save_tts_response(
-                shout_id=message_id,
-                audio_data=audio_data,
-                lang=lang,
-                gender=lang_gender,
+                shout_id=response.sid,
+                audio_data=response.audio_data,
+                lang=response.lang,
+                gender=response.lang_gender,
             )
             if is_ok:
                 response_data = {
-                    "cid": cid,
-                    "message_id": message_id,
-                    "lang": lang,
-                    "gender": lang_gender,
-                    "audio_data": audio_data,
+                    "cid": response.cid,
+                    "message_id": response.sid,
+                    "lang": response.lang,
+                    "gender": response.lang_gender,
+                    "audio_data": response.audio_data,
                 }
                 await sio.emit("incoming_tts", data=response_data, to=sid)
             else:
@@ -158,6 +147,9 @@ async def tts_response(sid, data):
                     to = [sid]
                 await emit_error(
                     message="Failed to get TTS response",
-                    context={"message_id": message_id, "cid": cid},
+                    context={
+                        "message_id": response.sid,
+                        "cid": response.cid,
+                    },
                     sids=to,
                 )
