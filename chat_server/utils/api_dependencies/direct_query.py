@@ -26,10 +26,18 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from fastapi import Query
+from fastapi import Query, Path, Body
 from typing import Optional, List
 
-from chat_server.utils.api_dependencies.models import ListPersonasQueryModel
+from chat_server.utils.api_dependencies.models import (
+    ListPersonasQueryModel,
+    AddPersonaModel,
+    SetPersonaModel,
+    DeletePersonaModel,
+    TogglePersonaStatusModel,
+)
+from chat_server.utils.api_dependencies.models.personas import PersonaModel
+from chat_server.utils.api_dependencies.extractors.personas import PersonaData
 
 
 def list_personas_query(
@@ -42,3 +50,80 @@ def list_personas_query(
     This avoids the issue with FastAPI's dependency injection system.
     """
     return ListPersonasQueryModel(llms=llms, user_id=user_id, only_enabled=only_enabled)
+
+
+def get_persona_query(
+    persona_id: str = Path(..., description="ID of the persona to retrieve"),
+) -> PersonaModel:
+    """
+    Creates a PersonaModel from a path parameter.
+    """
+    return PersonaData(persona_id)
+
+
+def add_persona_body(
+    persona_name: str = Body(...),
+    user_id: Optional[str] = Body(None),
+    supported_llms: List[str] = Body(default=[]),
+    default_llm: Optional[str] = Body(None),
+    description: str = Body(...),
+    enabled: bool = Body(False),
+) -> AddPersonaModel:
+    """
+    Creates an AddPersonaModel from body parameters.
+    """
+    return AddPersonaModel(
+        persona_name=persona_name,
+        user_id=user_id,
+        supported_llms=supported_llms,
+        default_llm=default_llm,
+        description=description,
+        enabled=enabled,
+    )
+
+
+def set_persona_body(
+    persona_name: str = Body(...),
+    user_id: Optional[str] = Body(None),
+    supported_llms: List[str] = Body(default=[]),
+    default_llm: Optional[str] = Body(None),
+    description: str = Body(...),
+) -> SetPersonaModel:
+    """
+    Creates a SetPersonaModel from body parameters.
+    """
+    return SetPersonaModel(
+        persona_name=persona_name,
+        user_id=user_id,
+        supported_llms=supported_llms,
+        default_llm=default_llm,
+        description=description,
+    )
+
+
+def delete_persona_query(
+    persona_name: str = Query(...),
+    user_id: Optional[str] = Query(None),
+) -> DeletePersonaModel:
+    """
+    Creates a DeletePersonaModel from query parameters.
+    """
+    return DeletePersonaModel(
+        persona_name=persona_name,
+        user_id=user_id,
+    )
+
+
+def toggle_persona_body(
+    persona_name: str = Body(...),
+    user_id: Optional[str] = Body(None),
+    enabled: bool = Body(True),
+) -> TogglePersonaStatusModel:
+    """
+    Creates a TogglePersonaStatusModel from body parameters.
+    """
+    return TogglePersonaStatusModel(
+        persona_name=persona_name,
+        user_id=user_id,
+        enabled=enabled,
+    )

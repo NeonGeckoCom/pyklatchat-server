@@ -26,10 +26,9 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from fastapi import APIRouter, Query, Depends
+from fastapi import APIRouter, Depends
 from starlette.responses import JSONResponse
 
-from chat_server.utils.enums import RequestModelType, UserRoles
 from chat_server.utils.http_exceptions import (
     ItemNotFoundException,
     DuplicatedItemException,
@@ -43,12 +42,18 @@ from chat_server.utils.api_dependencies.models import (
     TogglePersonaStatusModel,
     ListPersonasQueryModel,
 )
+from chat_server.utils.api_dependencies.models.personas import PersonaModel
 from chat_server.utils.api_dependencies.extractors import (
     CurrentUserData,
-    PersonaData,
 )
-from chat_server.utils.api_dependencies.validators import permitted_access
-from chat_server.utils.api_dependencies.direct_query import list_personas_query
+from chat_server.utils.api_dependencies.direct_query import (
+    list_personas_query,
+    get_persona_query,
+    add_persona_body,
+    set_persona_body,
+    delete_persona_query,
+    toggle_persona_body,
+)
 from klatchat_utils.database_utils.mongo_utils import MongoFilter, MongoLogicalOperators
 from klatchat_utils.database_utils.mongo_utils.queries.wrapper import MongoDocumentsAPI
 
@@ -92,7 +97,10 @@ async def list_personas(
 
 
 @router.get("/get/{persona_id}")
-async def get_persona(request_model: PersonaData = permitted_access(PersonaData)):
+async def get_persona(
+    current_user: CurrentUserData,
+    request_model: PersonaModel = Depends(get_persona_query),
+):
     """Gets persona details for a given persona_id"""
     item = MongoDocumentsAPI.PERSONAS.get_item(item_id=request_model.persona_id)
     if not item:
@@ -102,9 +110,7 @@ async def get_persona(request_model: PersonaData = permitted_access(PersonaData)
 
 @router.put("/add")
 async def add_persona(
-    request_model: AddPersonaModel = permitted_access(
-        AddPersonaModel, request_model_type=RequestModelType.DATA
-    ),
+    request_model: AddPersonaModel = Depends(add_persona_body),
 ):
     """Adds new persona"""
     existing_model = MongoDocumentsAPI.PERSONAS.get_item(
@@ -118,9 +124,7 @@ async def add_persona(
 
 @router.post("/set")
 async def set_persona(
-    request_model: SetPersonaModel = permitted_access(
-        SetPersonaModel, request_model_type=RequestModelType.DATA
-    ),
+    request_model: SetPersonaModel = Depends(set_persona_body),
 ):
     """Sets persona's data"""
     existing_model = MongoDocumentsAPI.PERSONAS.get_item(
@@ -137,7 +141,7 @@ async def set_persona(
 
 @router.delete("/delete")
 async def delete_persona(
-    request_model: DeletePersonaModel = permitted_access(DeletePersonaModel),
+    request_model: DeletePersonaModel = Depends(delete_persona_query),
 ):
     """Deletes persona"""
     MongoDocumentsAPI.PERSONAS.delete_item(item_id=request_model.persona_id)
@@ -146,12 +150,15 @@ async def delete_persona(
 
 @router.post("/toggle")
 async def toggle_persona_state(
-    request_model: TogglePersonaStatusModel = permitted_access(
-        TogglePersonaStatusModel,
-        min_required_role=UserRoles.AUTHORIZED_USER,
-        request_model_type=RequestModelType.DATA,
-    ),
+    current_user: CurrentUserData,
+    request_model: TogglePersonaStatusModel = Depends(toggle_persona_body),
 ):
+    # Check if user has sufficient permissions (previously handled by permitted_access)
+    if not current_user or current_user.is_tmp:
+        from chat_server.utils.http_exceptions import UserUnauthorizedException
+
+        raise UserUnauthorizedException
+
     updated_data = MongoDocumentsAPI.PERSONAS.update_item(
         filters=MongoFilter(key="_id", value=request_model.persona_id),
         data={"enabled": request_model.enabled},
