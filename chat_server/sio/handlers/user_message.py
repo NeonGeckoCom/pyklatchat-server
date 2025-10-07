@@ -49,7 +49,6 @@ async def user_message(sid, data):
     """
     LOG.debug(f"Received user message data: {data}")
     try:
-        data.setdefault("sid", "")  # TODO: This is patching clients that exclude `sid`
         message = UserMessage(**data)
         is_bot = message.is_bot == "1"
         is_proctor = message.username.startswith("proctor")
@@ -132,7 +131,7 @@ async def user_message(sid, data):
                 new_prompt_data = message.to_new_prompt_message()
                 new_prompt_data.context = prompt_data.get("context", {})
                 LOG.info(f"Emitting new_prompt_message: {new_prompt_data.model_dump()}")
-                # TODO: Consider backwards-compat. patching of `user_id` handling
+                # HACK: backwards-compat. patching of `userID` handling
                 await sio.emit(
                     "new_prompt_message",
                     data={**new_prompt_data.model_dump(), "userID": message.user_uid},
@@ -148,9 +147,7 @@ async def user_message(sid, data):
                 )
 
         message.bound_service = cid_data.get("bound_service", "")
-        # keys_diff = set(data.keys()).difference(set(message.model_dump().keys()))
-        # LOG.info(f"Removed keys={keys_diff}")
-        # TODO: Consider backwards-compat. patching of `user_id` handling
+        # HACK: backwards-compat. patching of `userID` handling
         await sio.emit(
             "new_message",
             data={**message.model_dump(), "userID": message.user_uid},
