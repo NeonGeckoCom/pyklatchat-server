@@ -28,6 +28,7 @@
 
 from fastapi import Query
 from pydantic import Field, computed_field, BaseModel
+from typing import Optional
 
 
 class PersonaModel(BaseModel):
@@ -84,6 +85,6 @@ class TogglePersonaStatusModel(PersonaModel):
 
 
 class ListPersonasQueryModel(BaseModel):
-    llms: list[str] | None = Field(Query(default=None), examples=[["doctor"]])
-    user_id: str | None = Field(Query(default=None), examples=["test_user_id"])
-    only_enabled: bool = Field(Query(default=False), examples=[True, False])
+    llms: list[str] | None = Field(default=None, examples=[["doctor"]])
+    user_id: str | None = Field(default=None, examples=["test_user_id"])
+    only_enabled: bool = Field(default=False, examples=[True, False])

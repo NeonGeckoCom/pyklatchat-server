@@ -26,7 +26,7 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Query, Depends
 from starlette.responses import JSONResponse
 
 from chat_server.utils.enums import RequestModelType, UserRoles
@@ -48,6 +48,7 @@ from chat_server.utils.api_dependencies.extractors import (
     PersonaData,
 )
 from chat_server.utils.api_dependencies.validators import permitted_access
+from chat_server.utils.api_dependencies.direct_query import list_personas_query
 from klatchat_utils.database_utils.mongo_utils import MongoFilter, MongoLogicalOperators
 from klatchat_utils.database_utils.mongo_utils.queries.wrapper import MongoDocumentsAPI
 
@@ -60,7 +61,7 @@ router = APIRouter(
 @router.get("/list")
 async def list_personas(
     current_user: CurrentUserData,
-    request_model: ListPersonasQueryModel = permitted_access(ListPersonasQueryModel),
+    request_model: ListPersonasQueryModel = Depends(list_personas_query),
 ) -> JSONResponse:
     """Lists personas matching query params"""
     filters = []
