@@ -35,7 +35,6 @@ from pydantic import ValidationError
 from chat_server.sio.server import sio
 from chat_server.sio.utils import emit_error
 from chat_server.server_config import server_config
-from chat_server.utils.languages import LanguageSettings
 
 from neon_data_models.models.api.klat.socketio import (
     GetTtsRequest,
