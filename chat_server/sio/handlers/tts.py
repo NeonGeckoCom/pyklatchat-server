@@ -52,7 +52,7 @@ async def request_tts(sid, data):
     """
     try:
         request = GetTtsRequest(**data)
-        matching_message = MongoDocumentsAPI.SHOUTS.get_item(item_id=request.message_id)
+        matching_message = MongoDocumentsAPI.SHOUTS.get_item(item_id=request.sid)
         if not matching_message:
             LOG.error("Failed to request TTS - matching message not found")
         else:
@@ -72,13 +72,13 @@ async def request_tts(sid, data):
             )
             if not audio_file:
                 LOG.info(
-                    f"File was not detected for cid={request.cid}, message_id={request.message_id}, lang={request.lang}"
+                    f"File was not detected for cid={request.cid}, sid={request.sid}, lang={request.lang}"
                 )
                 message_text = matching_message.get("message_text")
                 formatted_data = {
                     "cid": request.cid,
                     "sid": request.sid,
-                    "message_id": request.message_id,
+                    "message_id": request.sid,
                     "text": message_text,
                     "lang": request.lang,
                 }
@@ -90,12 +90,12 @@ async def request_tts(sid, data):
                     fo = server_config.sftp_connector.get_file_object(file_location)
                     if fo.getbuffer().nbytes > 0:
                         LOG.info(
-                            f"File detected for cid={request.cid}, message_id={request.message_id}, lang={request.lang}"
+                            f"File detected for cid={request.cid}, sid={request.sid}, lang={request.lang}"
                         )
                         audio_data = buffer_to_base64(fo)
                         response_data = {
                             "cid": request.cid,
-                            "message_id": request.message_id,
+                            "message_id": request.sid,
                             "lang": request.lang,
                             "gender": preferred_gender,
                             "audio_data": audio_data,
@@ -103,7 +103,7 @@ async def request_tts(sid, data):
                         await sio.emit("incoming_tts", data=response_data, to=sid)
                     else:
                         LOG.error(
-                            f"Empty file detected for cid={request.cid}, message_id={request.message_id}, lang={request.lang}"
+                            f"Empty file detected for cid={request.cid}, sid={request.sid}, lang={request.lang}"
                         )
                 except Exception as ex:
                     LOG.error(f"Failed to send TTS response - {ex}")
@@ -115,19 +115,19 @@ async def request_tts(sid, data):
 async def tts_response(sid, data):
     """Handle TTS Response from Observer"""
     response = GetTtsResponse(sid=sid, **data)
-    matching_shout = MongoDocumentsAPI.SHOUTS.get_item(item_id=response.message_id)
+    matching_shout = MongoDocumentsAPI.SHOUTS.get_item(item_id=response.sid)
     if not matching_shout:
         LOG.warning(
-            f"Skipping TTS Response for message_id={response.message_id} - matching shout does not exist"
+            f"Skipping TTS Response for sid={response.sid} - matching shout does not exist"
         )
     else:
         if not response.audio_data:
             LOG.warning(
-                f"Skipping TTS Response for message_id={response.message_id} - audio data is empty"
+                f"Skipping TTS Response for sid={response.sid} - audio data is empty"
             )
         else:
             is_ok = MongoDocumentsAPI.SHOUTS.save_tts_response(
-                shout_id=response.message_id,
+                shout_id=response.sid,
                 audio_data=response.audio_data,
                 lang=response.lang,
                 gender=response.lang_gender,
@@ -135,7 +135,7 @@ async def tts_response(sid, data):
             if is_ok:
                 response_data = {
                     "cid": response.cid,
-                    "message_id": response.message_id,
+                    "message_id": response.sid,
                     "lang": response.lang,
                     "gender": response.lang_gender,
                     "audio_data": response.audio_data,
@@ -148,7 +148,7 @@ async def tts_response(sid, data):
                 await emit_error(
                     message="Failed to get TTS response",
                     context={
-                        "message_id": response.message_id,
+                        "message_id": response.sid,
                         "cid": response.cid,
                     },
                     sids=to,
