@@ -37,7 +37,6 @@ from neon_data_models.models.api.klat.socketio import (
     GetPromptData,
     PromptData,
 )
-from pydantic import ValidationError
 from chat_server.sio.server import sio
 
 
@@ -67,16 +66,7 @@ async def prompt_completed(sid, data):
     :param sid: client session id
     :param data: user message data
     """
-    try:
-        prompt = CcaiPromptCompleted(**data)
-    except ValidationError as e:
-        LOG.error(
-            e
-        )  # TODO: This should be an error after the primary sources of errors are fixed
-        data.pop("user_id", None)  # remove user_id if present
-        data.pop("userID", None)  # remove userID if present
-        prompt = CcaiPromptCompleted(**data)  # try again
-
+    prompt = CcaiPromptCompleted(**data)
     LOG.info(
         f"setting prompt_id={prompt.prompt_id} as completed with: " f"{prompt.winner}"
     )
