@@ -48,7 +48,7 @@ async def new_prompt(sid, data):
     :param data: user message data
     """
     prompt = NewCcaiPrompt(**data)
-    LOG.info(f"Creating new prompt: {prompt.prompt_text}")
+    LOG.debug(f"Creating new prompt: {prompt.prompt_text}")
     try:
         formatted_data = prompt.to_db_query()
         MongoDocumentsAPI.PROMPTS.add_item(data=formatted_data)
@@ -72,8 +72,6 @@ async def prompt_completed(sid, data):
     )
     MongoDocumentsAPI.PROMPTS.set_completed(**prompt.to_db_query())
 
-    keys_diff = set(data.keys()).difference(set(prompt.model_dump().keys()))
-    LOG.info(f"Removed keys={keys_diff}")
     await sio.emit("set_prompt_completed", data=prompt.model_dump())
 
 
@@ -90,29 +88,15 @@ async def get_prompt_data(sid, data):
             **mongo_queries.fetch_prompt_data(**requested_prompt_data.to_db_query())
         )
         if requested_prompt_data.prompt_id:
-            # TODO: Confirm this works; unclear what was in `data`
             if isinstance(_prompt_data.data, list):
                 prompt_data = _prompt_data.data[0].model_dump()
             else:
                 prompt_data = _prompt_data.data.model_dump()
-            # prompt_data = {
-            #     "_id": _prompt_data[0]["_id"],
-            #     "is_completed": _prompt_data[0].get("is_completed", "1"),
-            #     **_prompt_data[0].get("data", {}),
-            # }
         else:
             prompt_data = []
             if isinstance(_prompt_data.data, list):
                 for item in _prompt_data:
                     prompt_data.append(item.model_dump())
-                    # prompt_data.append(
-                    #     {
-                    #         "_id": item["_id"],
-                    #         "created_on": item["created_on"],
-                    #         "is_completed": item.get("is_completed", "1"),
-                    #         **item["data"],
-                    #     }
-                    # )
         result = dict(
             data=prompt_data,
             receiver=requested_prompt_data.nick,
