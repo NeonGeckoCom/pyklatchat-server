@@ -39,23 +39,21 @@ from neon_data_models.models.api.klat.socketio import GetSttResponse, GetSttRequ
 async def stt_response(sid, data):
     """Handle STT Response from Observer"""
     response = GetSttResponse(**data)
-    matching_shout = MongoDocumentsAPI.SHOUTS.get_item(item_id=response.message_id)
+    matching_shout = MongoDocumentsAPI.SHOUTS.get_item(item_id=response.sid)
     if not matching_shout:
         LOG.warning(
-            f"Skipping STT Response for message_id={response.message_id} - matching shout does not exist"
+            f"Skipping STT Response for sid={response.sid} - matching shout does not exist"
         )
     else:
         try:
-            # message_text = response.transcript
-            # lang = LanguageSettings.to_system_lang(response.lang)
             MongoDocumentsAPI.SHOUTS.save_stt_response(
-                shout_id=response.message_id,
+                shout_id=response.sid,
                 message_text=response.transcript,
                 lang=response.lang,
             )
             response_data = {
                 "cid": response.cid,
-                "message_id": response.message_id,
+                "message_id": response.sid,
                 "lang": response.lang,
                 "message_text": response.transcript,
             }
@@ -76,12 +74,12 @@ async def request_stt(sid, data):
         request = GetSttRequest(sid=sid, **data)
         # TODO: Identify reason for this language patch
         request.lang = "en"
-        if shout_data := MongoDocumentsAPI.SHOUTS.get_item(item_id=request.message_id):
+        if shout_data := MongoDocumentsAPI.SHOUTS.get_item(item_id=request.sid):
             message_transcript = shout_data.get("transcripts", {}).get(request.lang)
             if message_transcript:
                 response_data = {
                     "cid": request.cid,
-                    "message_id": request.message_id,
+                    "message_id": request.sid,
                     "lang": request.lang,
                     "message_text": message_transcript,
                 }
@@ -92,7 +90,7 @@ async def request_stt(sid, data):
                 return await emit_error(message=err_msg, sids=[sid])
         audio_data = data.get(
             "audio_data"
-        ) or MongoDocumentsAPI.SHOUTS.fetch_audio_data(message_id=request.message_id)
+        ) or MongoDocumentsAPI.SHOUTS.fetch_audio_data(sid=request.sid)
         if not audio_data:
             LOG.error("Failed to fetch audio data")
         else:
