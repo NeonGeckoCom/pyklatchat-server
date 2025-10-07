@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.0.2a9](https://github.com/NeonGeckoCom/pyklatchat-server/tree/0.0.2a9) (2025-10-07)
+
+[Full Changelog](https://github.com/NeonGeckoCom/pyklatchat-server/compare/0.0.2a8...0.0.2a9)
+
+**Merged pull requests:**
+
+- Implement Pydantic models for SIO events [\#9](https://github.com/NeonGeckoCom/pyklatchat-server/pull/9) ([NeonDaniel](https://github.com/NeonDaniel))
+
 ## [0.0.2a8](https://github.com/NeonGeckoCom/pyklatchat-server/tree/0.0.2a8) (2025-10-07)
 
 [Full Changelog](https://github.com/NeonGeckoCom/pyklatchat-server/compare/0.0.2a7...0.0.2a8)
