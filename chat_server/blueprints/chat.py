@@ -210,6 +210,7 @@ async def get_live_conversation(
         build_message_json(raw_message=message_data[i], skin=model.skin)
         for i in range(len(message_data))
     ]
+    LOG.info(f"Returning live conversation: {conversation_data}")
 
     return conversation_data
 

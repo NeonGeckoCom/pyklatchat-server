@@ -52,7 +52,7 @@ async def request_tts(sid, data):
     :param data: received tts request data
     """
     try:
-        request = GetTtsRequest(sid=sid, **data)
+        request = GetTtsRequest(**data)
         matching_message = MongoDocumentsAPI.SHOUTS.get_item(item_id=request.message_id)
         if not matching_message:
             LOG.error("Failed to request TTS - matching message not found")

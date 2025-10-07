@@ -27,7 +27,6 @@
 # SOFTWARE,  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 from klatchat_utils.database_utils.mongo_utils.queries import mongo_queries
-from klatchat_utils.database_utils.mongo_utils.queries.dao.prompts import PromptStates
 from klatchat_utils.database_utils.mongo_utils.queries.wrapper import (
     MongoDocumentsAPI,
 )
@@ -38,7 +37,6 @@ from chat_server.sio.utils import emit_error, login_required
 from chat_server.server_config import server_config
 from chat_server.utils.enums import UserRoles
 from chat_server.utils.services.popularity_counter import PopularityCounter
-from pydantic import ValidationError
 from neon_data_models.models.api.klat.socketio import UserMessage
 
 
@@ -46,22 +44,13 @@ from neon_data_models.models.api.klat.socketio import UserMessage
 async def user_message(sid, data):
     """
     SIO event fired on new user message in chat
-    :param sid: client session id
+    :param sid: client session id (NOT shout_id which is in data['sid'])
     :param data: user message data
     """
     LOG.debug(f"Received user message data: {data}")
-    # TODO: Identify purpose of sid and data['sid'] (they do not appear to ever match)
     try:
-        try:
-            data.setdefault("sid", "")  # TODO: This is patching something...
-            message = UserMessage(**data)
-        except ValidationError as e:
-            LOG.error(
-                e
-            )  # TODO: This should be an error after the primary sources of errors are fixed
-            data.pop("user_id", None)  # remove user_id if present
-            data.pop("userID", None)  # remove userID if present
-            message = UserMessage(**data)  # try again
+        data.setdefault("sid", "")  # TODO: This is patching clients that exclude `sid`
+        message = UserMessage(**data)
         is_bot = message.is_bot == "1"
         is_proctor = message.username.startswith("proctor")
         LOG.info(f"{message.username} is_proctor={is_proctor}|is_bot={is_bot}")
@@ -95,7 +84,7 @@ async def user_message(sid, data):
             await emit_error(sids=[sid], message=msg)
             return
 
-        audio_path = f"{message.message_id}_audio.wav"
+        audio_path = f"{message.sid}_audio.wav"
         try:
             if message.is_audio == "1":
                 message_text = message.message_body.split(",")[-1]
@@ -127,10 +116,13 @@ async def user_message(sid, data):
 
         mongo_queries.add_shout(data=new_shout_data)
         if not message.is_announcement and message.prompt_id is not None:
+            LOG.info(
+                f"Adding shout to prompt {message.prompt_id} from user {message.user_uid}"
+            )
             is_ok = MongoDocumentsAPI.PROMPTS.add_shout_to_prompt(
                 prompt_id=message.prompt_id,
-                user_id=message.user_id,
-                message_id=message.message_id,
+                user_id=message.user_uid,
+                message_id=message.sid,
                 prompt_state=message.prompt_state,
             )
             if is_ok:
@@ -149,7 +141,7 @@ async def user_message(sid, data):
         for language, gender_mapping in message.message_tts.items():
             for gender, audio_data in gender_mapping.items():
                 MongoDocumentsAPI.SHOUTS.save_tts_response(
-                    shout_id=message.message_id,
+                    shout_id=message.sid,
                     audio_data=audio_data,
                     lang=language,
                     gender=gender,
